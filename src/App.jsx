@@ -6,6 +6,7 @@ import { FaLinkedin } from "react-icons/fa";
 import { SiExpress, SiMongodb } from 'react-icons/si';
 import { PiFileSqlLight } from 'react-icons/pi';
 import { RiTailwindCssFill } from 'react-icons/ri';
+import { GoArrowUpRight } from 'react-icons/go';
 
 
 const Highlight = ({ children }) => (
@@ -21,7 +22,6 @@ const App = () => {
     "About",
     "TechStack",
     "Projects",
-    "Education",
     "Contact",
   ]
   useEffect(() => {
@@ -69,7 +69,7 @@ const App = () => {
           </div>
 
           {/* navigation */}
-          <div className='flex flex-col'>
+          <div className='flex flex-col '>
             {Titles.map((title, idx) => {
               return (
                 <NavItem title={title} />
@@ -152,15 +152,90 @@ const App = () => {
               </p>
             </div>
           </section>
-          
-          <section id="projects" className='bg-yellow-300'>
-            <div className='h-[350px]'>
-              Hello
-            </div>
-          </section>
-          <section id="education" className='bg-yellow-300'>
-            <div className='h-[350px]'>
-              Hello
+          <section id="projects">
+            <div className='group flex flex-col gap-5'>
+              {/* Project 1 */}
+              <div className='group/card p-4 rounded flex gap-5 text-base text-slate-200 font-medium leading-tight group-hover:opacity-40 hover:opacity-100 hover:bg-gray-50/10 transition-all'>
+                {/* image */}
+                <div className='min-w-[150px]'>
+                  <img src='Project_1_1.png' width={200} height={48} className='border-2 border-slate-400 rounded' />
+                </div>
+                {/* content */}
+                <div>
+                  {/* title */}
+                  <div className='flex gap-2 group-hover/card:text-cyan-400 transition-all'>
+                    <h2 className=''>AI-powered travel planner I built</h2>
+                    <GoArrowUpRight className='group-hover/card:animate-bounce' />
+                  </div>
+                  {/* desc */}
+                  <p className='font-light text-sm mt-3 text-slate-400'>
+                    I created an intelligent travel assistant that generates personalized, day-wise
+                    itineraries with real destination images. It integrates Google Gemini for itinerary
+                    generation, Google Places Image API for visuals, and Google OAuth 2.0 for secure authentication.
+                    The platform also stores trip history and uses optimized prompting to deliver accurate and engaging
+                    travel plans.
+                  </p>
+                  <div className='flex gap-5 mt-4'>
+                    <a
+                      href="https://ai-trip-planner-rho-orcin.vercel.app/"
+                      target="_blank"
+                      className="flex items-center rounded-full bg-teal-400/10 px-3 py-1 text-xs font-medium leading-5 text-teal-300 hover:bg-teal-400/20 transition"
+                    >
+                      Website
+                    </a>
+                    <a
+                      href="https://github.com/RoshanMuhammedR/AI_Trip_Planner"
+                      target="_blank"
+                      className="flex items-center rounded-full bg-teal-400/10 px-3 py-1 text-xs font-medium leading-5 text-teal-300 hover:bg-teal-400/20 transition"
+                    >
+                      Source Code
+                    </a>
+                  </div>
+                </div>
+              </div>
+              {/* project 2 */}
+              <div className=' group/card p-4 rounded flex gap-5 text-base text-slate-200 font-medium leading-tight group-hover:opacity-40 hover:opacity-100 hover:bg-gray-50/10 transition-all'>
+                {/* image */}
+                <div className='min-w-[150px]'>
+                  <motion.img
+                    src='Project_2_1.png'
+                    width={200} height={48}
+                    className='border-2 border-slate-400 rounded'
+                  />
+                </div>
+                {/* content */}
+                <div>
+                  {/* title */}
+                  <div className='flex gap-2 group-hover/card:text-cyan-400 transition-all'>
+                    <h2 className=''>Full-stack task manager I developed</h2>
+                    <GoArrowUpRight className='group-hover/card:animate-bounce' />
+                  </div>
+                  {/* desc */}
+                  <p className='font-light text-sm mt-3 text-slate-400'>
+                    I built a secure, full-stack task manager using the MERN stack. It
+                    features authentication with bcrypt, clean UI components styled with
+                    Tailwind, and global state management through Zustand. The app supports
+                    creating, updating, and tracking tasks with smooth interactions and
+                    reliable backend storage for a consistent everyday workflow.
+                  </p>
+                  <div className='flex gap-5 mt-4'>
+                    <a 
+                      href="https://to-do-mern-y0qk.onrender.com/" 
+                      target="_blank"
+                      className="flex items-center rounded-full bg-teal-400/10 px-3 py-1 text-xs font-medium leading-5 text-teal-300 hover:bg-teal-400/20 transition"
+                    >
+                      Website
+                    </a>
+                    <a 
+                      href="https://github.com/RoshanMuhammedR/To-Do_MERN" 
+                      target="_blank"
+                      className="flex items-center rounded-full bg-teal-400/10 px-3 py-1 text-xs font-medium leading-5 text-teal-300 hover:bg-teal-400/20 transition"
+                    >
+                      Source Code
+                    </a>
+                  </div>
+                </div>
+              </div>
             </div>
           </section>
           <section id="contact" className='bg-yellow-300'>
@@ -176,3 +251,4 @@ const App = () => {
 }
 
 export default App
+
