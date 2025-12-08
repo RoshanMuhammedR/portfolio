@@ -1,4 +1,4 @@
-import React, { Children, useEffect, useState } from 'react'
+import React, { Children, useEffect, useId, useState } from 'react'
 import { useMotionValue, motion } from 'framer-motion'
 import NavItem from './components/NavItem';
 import { FaAws, FaGitAlt, FaGithub, FaJsSquare, FaNode, FaPython, FaReact } from "react-icons/fa";
@@ -7,6 +7,7 @@ import { SiExpress, SiMongodb } from 'react-icons/si';
 import { PiFileSqlLight } from 'react-icons/pi';
 import { RiTailwindCssFill } from 'react-icons/ri';
 import { GoArrowUpRight } from 'react-icons/go';
+import ContactForm from './components/ContactForm';
 
 
 const Highlight = ({ children }) => (
@@ -16,6 +17,7 @@ const Highlight = ({ children }) => (
 )
 
 const App = () => {
+  const id = useId();
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
   const Titles = [
@@ -33,7 +35,7 @@ const App = () => {
     return () => window.removeEventListener("mousemove", move);
   }, []);
   return (
-    <div className='w-full h-screen bg-[#0F172A] text-white'>
+    <div className='w-full bg-[#0F172A] text-white'>
       <motion.div
         style={{
           x: mouseX,
@@ -55,7 +57,7 @@ const App = () => {
         }}
       />
       {/* content */}
-      <div className='px-[18%] h-screen flex'>
+      <div className='lg:px-[18%] md:px-[5%] h-screen flex flex-col justify-center md:justify-start md:flex-row '>
 
         {/* Hero side panel */}
         <div className='w-[50%] py-[10%] flex flex-col justify-between'>
@@ -72,7 +74,7 @@ const App = () => {
           <div className='flex flex-col '>
             {Titles.map((title, idx) => {
               return (
-                <NavItem title={title} />
+                <NavItem title={title} key={idx}/>
               )
             })}
           </div>
@@ -102,7 +104,7 @@ const App = () => {
                 As a student with <Highlight>strong hands-on experience</Highlight>, most of my learning has come from building things,
                 breaking them, and figuring out how to fix them better than before. That process — the trial, the
                 debugging, the tiny improvements — is where I’ve learned the most about writing code that feels
-                <Highlight>stable and intentional</Highlight> from the inside out.
+                <Highlight> stable and intentional</Highlight> from the inside out.
               </p>
               <p>
                 When I’m not deep in code, I’m usually <Highlight>watching movies, playing football</Highlight>, or taking a moment away
@@ -236,11 +238,12 @@ const App = () => {
                   </div>
                 </div>
               </div>
+              
             </div>
           </section>
-          <section id="contact" className='bg-yellow-300'>
-            <div className='h-[350px]'>
-              Hello
+          <section id="contact" >
+            <div className='h-screen w-full flex flex-col items-center'>
+              <ContactForm/>
             </div>
           </section>
         </div>
