@@ -30,12 +30,13 @@ export default function ContactForm() {
     } finally{
       setLoad(false);
     }
-  };
 
+    
+  };
 
   return (
     <>
-      <h1 className="text-6xl font-extrabold text-slate-200 flex gap-3 group">
+      <h1 className="text-6xl font-extrabold text-slate-200 flex gap-3 group" >
         <span className="relative text-white">
           Let's
         </span>
