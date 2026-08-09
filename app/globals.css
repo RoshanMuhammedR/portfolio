@@ -1,0 +1,139 @@
+@import "tailwindcss";
+
+/* ------------------------------------------------------------------
+   Technical Blueprint — design tokens
+   Dark-only by intent. One accent, hairline rules, monospace metadata.
+------------------------------------------------------------------ */
+@theme {
+  --color-canvas: #0a0a0b;
+  --color-surface: #101013;
+  --color-surface-2: #16161a;
+  --color-line: #ffffff14;
+  --color-line-strong: #ffffff26;
+  --color-ink: #ededef;
+  --color-ink-dim: #8b8b93;
+  --color-ink-faint: #5c5c64;
+  --color-accent: #e9a23b;
+  --color-accent-soft: #f0be76;
+  --color-accent-dim: #e9a23b1f;
+
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "SFMono-Regular", monospace;
+
+  /* Reading measure for body copy — narrower than the page container. */
+  --container-measure: 46rem;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    /* Sticky header offset for in-page anchors */
+    scroll-padding-top: 5.5rem;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-synthesis-weight: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: clip;
+  }
+
+  ::selection {
+    background-color: var(--color-accent);
+    color: var(--color-canvas);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+
+  /* Only the rendered SVG diagrams need this; keeps strokes crisp. */
+  svg {
+    shape-rendering: geometricPrecision;
+  }
+}
+
+@layer utilities {
+  /* Numerals that line up in tables and metadata rows. */
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .mono-label {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    line-height: 1;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--color-ink-faint);
+  }
+
+  /* Blueprint grid: pure CSS, radially masked so it fades toward the edges. */
+  .blueprint-grid {
+    background-image:
+      repeating-linear-gradient(
+        to right,
+        var(--color-line) 0 1px,
+        transparent 1px var(--grid-size, 72px)
+      ),
+      repeating-linear-gradient(
+        to bottom,
+        var(--color-line) 0 1px,
+        transparent 1px var(--grid-size, 72px)
+      );
+    -webkit-mask-image: radial-gradient(
+      ellipse 80% 60% at 50% 0%,
+      #000 0%,
+      transparent 75%
+    );
+    mask-image: radial-gradient(
+      ellipse 80% 60% at 50% 0%,
+      #000 0%,
+      transparent 75%
+    );
+  }
+
+  /* Reveal-on-scroll baseline. JS toggles [data-revealed] via IntersectionObserver
+     so the animation costs nothing beyond a class flip. */
+  .reveal {
+    opacity: 0;
+    transform: translateY(8px);
+    transition:
+      opacity 420ms cubic-bezier(0.22, 1, 0.36, 1),
+      transform 420ms cubic-bezier(0.22, 1, 0.36, 1);
+    transition-delay: var(--reveal-delay, 0ms);
+  }
+
+  .reveal[data-revealed="true"] {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Anything decorative resolves instantly when motion is not wanted. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
