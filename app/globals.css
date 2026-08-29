@@ -1,139 +1,150 @@
 @import "tailwindcss";
 
-/* ------------------------------------------------------------------
-   Technical Blueprint — design tokens
-   Dark-only by intent. One accent, hairline rules, monospace metadata.
------------------------------------------------------------------- */
+/* Type is supplied by next/font (app/layout.tsx). `--font-sans` is redefined
+   here because the layout root carries `font-sans`; without this it resolves to
+   Tailwind's stock system stack and Plus Jakarta Sans never renders. */
 @theme {
-  --color-canvas: #0a0a0b;
-  --color-surface: #101013;
-  --color-surface-2: #16161a;
-  --color-line: #ffffff14;
-  --color-line-strong: #ffffff26;
-  --color-ink: #ededef;
-  --color-ink-dim: #8b8b93;
-  --color-ink-faint: #5c5c64;
-  --color-accent: #e9a23b;
-  --color-accent-soft: #f0be76;
-  --color-accent-dim: #e9a23b1f;
-
-  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-geist-mono), ui-monospace, "SFMono-Regular", monospace;
-
-  /* Reading measure for body copy — narrower than the page container. */
-  --container-measure: 46rem;
+  --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
 }
 
 @layer base {
+  :root {
+    /* The plate */
+    --paper: #ECEEE9;
+    --paper-sunk: #E4E7E1;
+    --card: #F4F6F1;
+    /* The ink */
+    --ink: #121316;
+    --ink-muted: #4E5564;
+    --ink-faint: #62697A;
+    /* The rules */
+    --rule: #D4D8CF;
+    --rule-soft: #DFE2DA;
+    /* The one accent */
+    --mint: #00FF9D;
+    --mint-ink: #076B39;
+  }
+
   html {
     scroll-behavior: smooth;
-    /* Sticky header offset for in-page anchors */
-    scroll-padding-top: 5.5rem;
-    -webkit-text-size-adjust: 100%;
   }
 
   body {
-    background-color: var(--color-canvas);
-    color: var(--color-ink);
     font-family: var(--font-sans);
-    font-synthesis-weight: none;
-    text-rendering: optimizeLegibility;
-    -webkit-font-smoothing: antialiased;
-    overflow-x: clip;
+    background-color: var(--paper);
+    color: var(--ink);
   }
 
+  code, pre {
+    font-family: var(--font-mono);
+  }
+
+  /* The browser surfaces the design would otherwise leave to the UA. */
   ::selection {
-    background-color: var(--color-accent);
-    color: var(--color-canvas);
+    background: var(--mint);
+    color: #000;
   }
 
   :focus-visible {
-    outline: 2px solid var(--color-accent);
+    outline: 2px solid var(--ink);
     outline-offset: 3px;
     border-radius: 2px;
   }
 
-  /* Only the rendered SVG diagrams need this; keeps strokes crisp. */
-  svg {
-    shape-rendering: geometricPrecision;
-  }
-}
-
-@layer utilities {
-  /* Numerals that line up in tables and metadata rows. */
-  .tabular {
+  /* Blueprint drawings are dimensioned; their numerals should line up. */
+  time, .tabular {
     font-variant-numeric: tabular-nums;
   }
-
-  .mono-label {
-    font-family: var(--font-mono);
-    font-size: 0.6875rem;
-    line-height: 1;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--color-ink-faint);
-  }
-
-  /* Blueprint grid: pure CSS, radially masked so it fades toward the edges. */
-  .blueprint-grid {
-    background-image:
-      repeating-linear-gradient(
-        to right,
-        var(--color-line) 0 1px,
-        transparent 1px var(--grid-size, 72px)
-      ),
-      repeating-linear-gradient(
-        to bottom,
-        var(--color-line) 0 1px,
-        transparent 1px var(--grid-size, 72px)
-      );
-    -webkit-mask-image: radial-gradient(
-      ellipse 80% 60% at 50% 0%,
-      #000 0%,
-      transparent 75%
-    );
-    mask-image: radial-gradient(
-      ellipse 80% 60% at 50% 0%,
-      #000 0%,
-      transparent 75%
-    );
-  }
-
-  /* Reveal-on-scroll baseline. JS toggles [data-revealed] via IntersectionObserver
-     so the animation costs nothing beyond a class flip. */
-  .reveal {
-    opacity: 0;
-    transform: translateY(8px);
-    transition:
-      opacity 420ms cubic-bezier(0.22, 1, 0.36, 1),
-      transform 420ms cubic-bezier(0.22, 1, 0.36, 1);
-    transition-delay: var(--reveal-delay, 0ms);
-  }
-
-  .reveal[data-revealed="true"] {
-    opacity: 1;
-    transform: none;
-  }
 }
 
-/* Anything decorative resolves instantly when motion is not wanted. */
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
   }
-
-  .reveal {
-    opacity: 1;
-    transform: none;
-    transition: none;
-  }
-
-  *,
-  *::before,
-  *::after {
+  *, *::before, *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
   }
+}
+
+/* ---------------------------------------------------------------
+   The plate: a drawn ground, not a dot-grid texture.
+   --------------------------------------------------------------- */
+
+.bg-plate {
+  background-color: var(--paper);
+  background-image:
+    linear-gradient(to right, rgba(18, 19, 22, 0.045) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(18, 19, 22, 0.045) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+.bg-plate-fine {
+  background-size: 16px 16px;
+  background-image:
+    linear-gradient(to right, rgba(18, 19, 22, 0.035) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(18, 19, 22, 0.035) 1px, transparent 1px);
+}
+
+/* ---------------------------------------------------------------
+   Entrance. One authored moment, in CSS so the content is never
+   hidden behind JavaScript and never runs under reduced-motion.
+   The resting state is visible; the animation only adds the rise.
+   --------------------------------------------------------------- */
+
+@keyframes plate-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .rise {
+    animation: plate-rise 0.72s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  }
+  .rise-1 { animation-delay: 0.06s; }
+  .rise-2 { animation-delay: 0.14s; }
+  .rise-3 { animation-delay: 0.22s; }
+  .rise-4 { animation-delay: 0.3s; }
+}
+
+/* ---------------------------------------------------------------
+   Scrollbar
+   --------------------------------------------------------------- */
+
+::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--paper);
+}
+
+::-webkit-scrollbar-thumb {
+  background: #C4C9BE;
+  border: 2px solid var(--paper);
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #A7AE9E;
+}
+
+/* Modal entrance */
+@keyframes ui-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-in.fade-in {
+  animation: ui-fade-in 150ms ease-out both;
 }

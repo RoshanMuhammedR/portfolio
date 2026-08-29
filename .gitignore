@@ -28,3 +28,6 @@ yarn-error.log*
 .vscode/*
 !.vscode/extensions.json
 .idea
+
+# impeccable design-tool scratch (screenshots, critique snapshots)
+.impeccable/

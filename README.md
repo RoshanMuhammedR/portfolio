@@ -2,8 +2,11 @@
 
 Live: <https://portfolio-frontend-teal-ten.vercel.app/>
 
-A developer portfolio built as a spec sheet: a landing page that states what I
-build, and case-study pages that show how three of those systems actually work.
+A developer portfolio built as a **layout visualizer**: one set of content,
+rendered through three switchable presentations — a minimalist blueprint
+(Architect), a code IDE (Terminal), and a frosted-glass treatment
+(Glassmorphism). Everything else — résumé, contact, and per-project technical
+deep dives — opens in modals over whichever layout is active.
 
 ## Stack
 
@@ -11,62 +14,40 @@ build, and case-study pages that show how three of those systems actually work.
 |---|---|
 | Framework | Next.js 15 (App Router), React 19, TypeScript |
 | Styling | Tailwind CSS v4 — CSS-first tokens in [`app/globals.css`](app/globals.css), no `tailwind.config.js` |
-| Type | Geist + Geist Mono, self-hosted via `next/font` |
-| Email | Resend, through [`app/api/contact/route.ts`](app/api/contact/route.ts) |
-| Motion | IntersectionObserver + CSS transitions. No animation library. |
+| Type | Plus Jakarta Sans + JetBrains Mono, self-hosted via `next/font` |
+| Icons | `lucide-react` |
+| Motion | `motion` (Framer Motion), used by the Architect layout |
 
-Every route except the contact API is statically prerendered.
+The page is a single statically prerendered route. There is no backend: the
+contact form composes a `mailto:` and hands off to the visitor's mail client,
+so **no environment variables are required**.
 
 ## Getting started
 
 ```bash
 npm install
-cp .env.example .env.local   # fill in RESEND_API_KEY and CONTACT_TO_EMAIL
 npm run dev
 ```
 
 | Script | Does |
 |---|---|
 | `npm run dev` | Dev server on <http://localhost:3000> |
-| `npm run build` | Production build |
-| `npm start` | Serve the production build |
-| `npm run lint` | ESLint (flat config, typescript-eslint + react-hooks) |
+| `npm run build` | Production build (lints and typechecks) |
+| `npm run start` | Serve the production build |
+| `npm run lint` | ESLint |
 
-## Layout
+## Layout of the source
 
-```
-app/
-  layout.tsx            Shell: fonts, metadata, grid backdrop, header/footer
-  page.tsx              Landing — composes the six sections
-  work/[slug]/page.tsx  Case studies, statically generated from content/work.ts
-  api/contact/route.ts  Contact form handler (Resend)
-  globals.css           Design tokens and the handful of custom utilities
-components/
-  layout/               Header, footer, blueprint grid
-  sections/             One file per landing section
-  work/diagrams/        Hand-placed SVG architecture diagrams
-  ui/                   SectionHeader, ArrowLink, TechChip, Reveal
-content/                All copy. Nothing user-facing is hardcoded in JSX.
-lib/                    cn(), useActiveSection()
-```
+| Path | Holds |
+|---|---|
+| [`app/page.tsx`](app/page.tsx) | The shell: active layout, and the four modals |
+| [`content/portfolioData.ts`](content/portfolioData.ts) | **All copy** — identity, experience, projects, stack, FAQ |
+| [`types.ts`](types.ts) | The shapes that content file has to satisfy |
+| `components/architect/` · `components/terminal/` · `components/glassmorphism/` | The three layouts |
+| [`components/Navbar.tsx`](components/Navbar.tsx) · [`components/LayoutSwitcherBar.tsx`](components/LayoutSwitcherBar.tsx) | Chrome above the layouts |
+| [`components/CommandPalette.tsx`](components/CommandPalette.tsx) | ⌘K / Ctrl+K palette |
+| [`components/ResumeModal.tsx`](components/ResumeModal.tsx) · [`components/ContactModal.tsx`](components/ContactModal.tsx) · [`components/TechnicalDeepDiveModal.tsx`](components/TechnicalDeepDiveModal.tsx) | The overlays |
+| [`components/SagaRagVisualizer.tsx`](components/SagaRagVisualizer.tsx) · [`components/KonnectifyWorkflowSim.tsx`](components/KonnectifyWorkflowSim.tsx) | Architecture diagrams inside the deep dives |
 
-### Editing content
-
-Every string on the site lives in `content/`. Adding a project means adding one
-entry to `content/work.ts` and one diagram component — no JSX duplication.
-
-## Design notes
-
-- **Dark only, one accent.** Tokens are defined once under `@theme`; nothing
-  hardcodes a hex value outside `globals.css`.
-- **Motion is CSS.** `Reveal` flips a `data-revealed` attribute via
-  IntersectionObserver and lets a CSS transition do the work — no React state,
-  no re-render. `prefers-reduced-motion: reduce` resolves everything instantly.
-- **Diagrams scroll rather than shrink.** Each SVG keeps a minimum width inside
-  an `overflow-x-auto` frame so labels stay legible on a phone.
-
-## Deployment
-
-Deployed on Vercel. The project's framework preset must be **Next.js** (it was
-previously a Vite project), and `RESEND_API_KEY` / `CONTACT_TO_EMAIL` must be set
-as environment variables.
+To change what the site says, edit `content/portfolioData.ts` — all three
+layouts read from it.

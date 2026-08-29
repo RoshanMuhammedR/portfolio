@@ -1,17 +1,13 @@
 import type { MetadataRoute } from "next";
-import { site } from "@/content/site";
-import { work } from "@/content/work";
+import { identityData } from "@/content/portfolioData";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const now = new Date();
-
   return [
-    { url: site.url, lastModified: now, changeFrequency: "monthly", priority: 1 },
-    ...work.map((item) => ({
-      url: `${site.url}/work/${item.slug}`,
-      lastModified: now,
-      changeFrequency: "monthly" as const,
-      priority: 0.8,
-    })),
+    {
+      url: identityData.liveSiteUrl,
+      lastModified: new Date(),
+      changeFrequency: "monthly",
+      priority: 1,
+    },
   ];
 }

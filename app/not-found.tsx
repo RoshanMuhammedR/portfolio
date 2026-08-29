@@ -2,24 +2,26 @@ import Link from "next/link";
 
 export default function NotFound() {
   return (
-    <div className="mx-auto flex min-h-[60vh] max-w-6xl flex-col justify-center px-5 py-20 sm:px-8">
-      <p className="mono-label">
-        <span className="text-accent">404</span> / Not found
-      </p>
-      <h1 className="mt-6 text-4xl font-medium tracking-tight sm:text-5xl">
-        This page doesn&apos;t exist.
-      </h1>
-      <p className="mt-4 max-w-measure text-ink-dim">
-        The link may be out of date, or the page may have been renamed.
-      </p>
-      <div className="mt-8">
+    <main className="bg-plate flex min-h-screen items-center justify-center px-6">
+      <div className="w-full max-w-lg border border-[#D4D8CF] bg-[#F4F6F1] p-8">
+        <p className="font-mono text-[11px] font-bold uppercase tracking-[0.18em] text-[#4E5564]">
+          404 &middot; Route not found
+        </p>
+        <h1 className="mt-3 text-3xl font-bold tracking-tight text-[#121316]">
+          This path is not wired up.
+        </h1>
+        <p className="mt-3 text-sm leading-relaxed text-[#4E5564]">
+          The link is out of date, or the page it pointed at was renamed. Everything lives on the
+          single canvas at the root.
+        </p>
         <Link
           href="/"
-          className="inline-block border border-line px-4 py-3 font-mono text-[0.6875rem] tracking-widest text-ink uppercase transition-colors hover:border-accent hover:text-accent"
+          className="mt-7 inline-flex items-center gap-2 rounded-full bg-[#232832] px-5 py-3 font-mono text-xs font-bold uppercase tracking-wider text-white transition-colors hover:bg-[#16181F]"
         >
-          Back to the portfolio
+          <span aria-hidden="true">&larr;</span>
+          <span>Back to the portfolio</span>
         </Link>
       </div>
-    </div>
+    </main>
   );
 }

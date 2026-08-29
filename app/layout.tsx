@@ -1,109 +1,84 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import { Toaster } from "sonner";
-import { GridBackdrop } from "@/components/layout/GridBackdrop";
-import { SiteHeader } from "@/components/layout/SiteHeader";
-import { SiteFooter } from "@/components/layout/SiteFooter";
-import { site } from "@/content/site";
+import { JetBrains_Mono, Plus_Jakarta_Sans } from "next/font/google";
+import { identityData } from "@/content/portfolioData";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+/** Product voice: everything that is not code is set in Jakarta. */
+const jakarta = Plus_Jakarta_Sans({
+  variable: "--font-jakarta",
   subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700", "800"],
   display: "swap",
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+/** The blueprint voice: labels, metrics, file paths, snippets. */
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-jetbrains-mono",
   subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+  style: ["normal", "italic"],
   display: "swap",
 });
 
 const description =
-  "Full-stack engineer building product surfaces in Next.js and React over NestJS and FastAPI APIs, with PostgreSQL, Redis and queue-backed workers underneath.";
+  "Portfolio of Roshan Muhammed R, Full-stack engineer specializing in Next.js, React, NestJS, FastAPI, PostgreSQL, Redis, and high-performance distributed systems.";
+
+const title = `${identityData.name} - Full-Stack Engineer Portfolio`;
 
 export const metadata: Metadata = {
-  metadataBase: new URL(site.url),
-  title: {
-    default: `${site.name} — ${site.role}`,
-    template: `%s — ${site.name}`,
-  },
+  metadataBase: new URL(identityData.liveSiteUrl),
+  title,
   description,
   keywords: [
     "Roshan Muhammed",
     "full-stack engineer",
     "Next.js",
+    "React",
     "NestJS",
     "FastAPI",
     "TypeScript",
     "PostgreSQL",
     "Redis",
   ],
-  authors: [{ name: site.name, url: site.url }],
-  creator: site.name,
+  authors: [{ name: identityData.name, url: identityData.liveSiteUrl }],
+  creator: identityData.name,
   openGraph: {
     type: "website",
-    url: site.url,
-    siteName: site.name,
-    title: `${site.name} — ${site.role}`,
+    url: identityData.liveSiteUrl,
+    siteName: identityData.name,
+    title,
     description,
     locale: "en_US",
   },
   twitter: {
     card: "summary_large_image",
-    title: `${site.name} — ${site.role}`,
+    title,
     description,
   },
   robots: { index: true, follow: true },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0a0a0b",
-  colorScheme: "dark",
+  themeColor: "#ECEEE9",
+  colorScheme: "light",
 };
 
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
-      <head>
-        {/* Reveal-on-scroll starts at opacity 0 and is turned on by an observer.
-            Without JS there is no observer, so the page must opt out entirely. */}
-        <noscript>
-          <style>{`.reveal{opacity:1;transform:none}`}</style>
-        </noscript>
-      </head>
-      <body className="min-h-dvh antialiased">
+    <html
+      lang="en"
+      className={`${jakarta.variable} ${jetbrainsMono.variable} scroll-smooth`}
+    >
+      <body className="min-h-screen bg-[#ECEEE9] text-[#121316] antialiased">
         <a
           href="#main"
-          className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[60] focus:border focus:border-accent focus:bg-canvas focus:px-3 focus:py-2 focus:font-mono focus:text-xs focus:tracking-widest focus:text-accent focus:uppercase"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-[#121316] focus:px-5 focus:py-3 focus:text-sm focus:font-bold focus:text-white"
         >
           Skip to content
         </a>
-
-        <GridBackdrop />
-        <SiteHeader />
-
-        <main id="main" tabIndex={-1} className="focus:outline-none">
-          {children}
-        </main>
-
-        <SiteFooter />
-
-        <Toaster
-          theme="dark"
-          position="bottom-right"
-          toastOptions={{
-            style: {
-              background: "#101013",
-              border: "1px solid #ffffff26",
-              color: "#ededef",
-              borderRadius: "0",
-              fontSize: "0.8125rem",
-            },
-          }}
-        />
+        {children}
       </body>
     </html>
   );
