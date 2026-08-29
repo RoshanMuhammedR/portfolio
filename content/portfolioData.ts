@@ -61,43 +61,7 @@ export const projectsData: ProjectItem[] = [
       "PostgreSQL + pgvector HNSW similarity queries with chunk offset citations"
     ],
     stack: ["Next.js", "FastAPI", "Python", "TypeScript", "PostgreSQL", "pgvector", "Celery", "Redis", "Turbo", "pnpm"],
-    diagramType: "rag-pipeline",
-    deepDive: {
-      overview: "Saga resolves hallucination in enterprise documentation by providing deterministic citations tied directly to source chunks and timestamps.",
-      problem: "Heavy multi-source parsing inside synchronous HTTP handlers caused server timeouts and high latency.",
-      solution: "Decoupled extraction workers via Celery + Redis queues with an idempotent chunk-and-embed pipeline into PostgreSQL pgvector.",
-      codeSample: {
-        file: "ingestion/pipeline.py",
-        code: `@celery_app.task(bind=True, max_retries=3)
-def ingest_document_chunks(self, document_id: str, file_uri: str, parser_type: str):
-    # 1. Specialized extractor dispatch
-    extractor = get_extractor(parser_type)
-    raw_nodes = extractor.extract(file_uri)
-
-    # 2. Semantic chunking with overlap
-    chunker = RecursiveCharacterTextSplitter(chunk_size=512, chunk_overlap=64)
-    chunks = chunker.split_documents(raw_nodes)
-
-    # 3. Vector embedding generation
-    embeddings = embedding_model.encode([c.text for c in chunks])
-
-    # 4. Atomic pgvector bulk upsert with metadata lineage
-    with SessionLocal() as db:
-        records = [
-            VectorChunk(
-                doc_id=document_id,
-                chunk_index=idx,
-                content=chunk.text,
-                embedding=embeddings[idx],
-                metadata={"source": file_uri, "offset": chunk.metadata.get("offset")}
-            )
-            for idx, chunk in enumerate(chunks)
-        ]
-        db.bulk_save_objects(records)
-        db.commit()
-    return {"status": "indexed", "total_chunks": len(chunks)}`
-      }
-    }
+    diagramType: "rag-pipeline"
   },
   {
     id: "ai-trip-planner",
@@ -114,46 +78,7 @@ def ingest_document_chunks(self, document_id: str, file_uri: str, parser_type: s
       "Responsive interactive map and timeline rendering"
     ],
     stack: ["React", "Tailwind CSS", "Google Gemini API", "Google Places API", "Google OAuth 2.0", "Node.js"],
-    diagramType: "trip-planner",
-    deepDive: {
-      overview: "Delivers realistic, hour-by-hour travel itineraries with verified places, driving durations, and authentic photos instead of generic AI lists.",
-      problem: "Raw LLM generation regularly hallucinated non-existent restaurants and outdated hotel pricing.",
-      solution: "Structured JSON schema output from Gemini grounded with real-time Google Places API validation and photos.",
-      codeSample: {
-        file: "services/itinerary-generator.ts",
-        code: `export async function generateVerifiedTrip(req: TripRequest): Promise<TripPlan> {
-  // 1. Structured Gemini prompt with strict JSON schema
-  const prompt = buildStructuredItineraryPrompt(req.destination, req.days, req.budget, req.travelers);
-  const rawPlan = await geminiModel.generateContent({
-    contents: [{ role: 'user', parts: [{ text: prompt }] }],
-    generationConfig: { responseMimeType: "application/json" }
-  });
-
-  const parsedPlan: RawItinerary = JSON.parse(rawPlan.response.text());
-
-  // 2. Parallel grounding with Google Places API for real photos & coordinates
-  const enrichedDays = await Promise.all(
-    parsedPlan.itinerary.map(async (day) => {
-      const enrichedPlan = await Promise.all(
-        day.activities.map(async (activity) => {
-          const placeDetails = await fetchGooglePlaceDetails(activity.placeName, req.destination);
-          return {
-            ...activity,
-            verifiedAddress: placeDetails.formatted_address,
-            geo: placeDetails.geometry.location,
-            photoUrl: placeDetails.photos?.[0]?.url || '/placeholder-place.jpg',
-            rating: placeDetails.rating
-          };
-        })
-      );
-      return { ...day, activities: enrichedPlan };
-    })
-  );
-
-  return { ...parsedPlan, days: enrichedDays };
-}`
-      }
-    }
+    diagramType: "trip-planner"
   }
 ];
 

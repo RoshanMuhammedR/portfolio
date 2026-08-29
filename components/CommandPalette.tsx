@@ -8,9 +8,6 @@ import {
   X, 
   Copy, 
   ArrowRight,
-  Database,
-  Cpu,
-  Code
 } from 'lucide-react';
 import { identityData } from '@/content/portfolioData';
 import { useDialog } from '@/lib/useDialog';
@@ -20,15 +17,13 @@ interface CommandPaletteProps {
   onClose: () => void;
   onOpenResume: () => void;
   onOpenContact: () => void;
-  onOpenProjectDeepDive: (projectId: string) => void;
 }
 
 export const CommandPalette: React.FC<CommandPaletteProps> = ({
   isOpen,
   onClose,
   onOpenResume,
-  onOpenContact,
-  onOpenProjectDeepDive
+  onOpenContact
 }) => {
   const [query, setQuery] = useState('');
   const [copiedText, setCopiedText] = useState<string | null>(null);
@@ -143,54 +138,6 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
             </button>
           </div>
 
-          {/* Deep Dives & Projects */}
-          <div className="pt-3 space-y-1">
-            <div className="text-[11px] font-mono uppercase tracking-wider text-[#585F6B] px-2 py-1 font-bold">
-              Projects & Technical Architecture
-            </div>
-
-            <button
-              onClick={() => { onOpenProjectDeepDive('saga'); onClose(); }}
-              className="w-full flex items-center justify-between p-2.5 rounded-lg text-left text-sm text-[#121316] hover:bg-[#EAEFE6] transition-colors cursor-pointer"
-            >
-              <div className="flex items-center space-x-3">
-                <Database className="w-4 h-4 text-[#0A733E]" />
-                <div>
-                  <div className="font-semibold">Saga — RAG Knowledge Base Architecture</div>
-                  <div className="text-xs text-[#585F6B]">Celery workers, Redis queue, pgvector citations</div>
-                </div>
-              </div>
-              <span className="text-xs font-mono text-[#585F6B]">Deep Dive ➔</span>
-            </button>
-
-            <button
-              onClick={() => { onOpenProjectDeepDive('ai-trip-planner'); onClose(); }}
-              className="w-full flex items-center justify-between p-2.5 rounded-lg text-left text-sm text-[#121316] hover:bg-[#EAEFE6] transition-colors cursor-pointer"
-            >
-              <div className="flex items-center space-x-3">
-                <Cpu className="w-4 h-4 text-[#0A733E]" />
-                <div>
-                  <div className="font-semibold">AI Trip Planner — Prompt & API Grounding</div>
-                  <div className="text-xs text-[#585F6B]">Gemini structured schemas, Google Places validation</div>
-                </div>
-              </div>
-              <span className="text-xs font-mono text-[#585F6B]">Deep Dive ➔</span>
-            </button>
-
-            <button
-              onClick={() => { onOpenProjectDeepDive('konnectify'); onClose(); }}
-              className="w-full flex items-center justify-between p-2.5 rounded-lg text-left text-sm text-[#121316] hover:bg-[#EAEFE6] transition-colors cursor-pointer"
-            >
-              <div className="flex items-center space-x-3">
-                <Code className="w-4 h-4 text-[#0A733E]" />
-                <div>
-                  <div className="font-semibold">Konnectify — Distributed Task Crediting on Redis</div>
-                  <div className="text-xs text-[#585F6B]">Atomic memory metering & BullMQ batched database writes</div>
-                </div>
-              </div>
-              <span className="text-xs font-mono text-[#585F6B]">Deep Dive ➔</span>
-            </button>
-          </div>
         </div>
 
         {/* Footer Navigation Hints */}

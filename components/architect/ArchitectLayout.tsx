@@ -16,7 +16,6 @@ const vintageArtwork = '/images/vintage-stipple-etching.jpg';
 interface ArchitectLayoutProps {
   onOpenResume: () => void;
   onOpenContact: () => void;
-  onOpenDeepDive: (id: string) => void;
 }
 
 /** Shown beside a project title, deliberately outside the heading element so
@@ -28,8 +27,7 @@ const projectOrigin: Record<string, string> = {
 
 export const ArchitectLayout: React.FC<ArchitectLayoutProps> = ({
   onOpenResume,
-  onOpenContact,
-  onOpenDeepDive
+  onOpenContact
 }) => {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [copiedEmail, setCopiedEmail] = useState(false);
@@ -230,13 +228,6 @@ export const ArchitectLayout: React.FC<ArchitectLayoutProps> = ({
                         <span>Source</span>
                       </a>
                     )}
-                    <button
-                      onClick={() => onOpenDeepDive(project.id)}
-                      className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-[#C6CCC0] px-4 py-3 text-sm font-semibold text-[#232832] transition-colors hover:border-[#121316]"
-                    >
-                      <span>How it works</span>
-                      <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
-                    </button>
                   </div>
                 </header>
 

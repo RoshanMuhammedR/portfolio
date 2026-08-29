@@ -6,21 +6,11 @@ import { ArchitectLayout } from "@/components/architect/ArchitectLayout";
 import { CommandPalette } from "@/components/CommandPalette";
 import { ResumeModal } from "@/components/ResumeModal";
 import { ContactModal } from "@/components/ContactModal";
-import { TechnicalDeepDiveModal } from "@/components/TechnicalDeepDiveModal";
 
 export default function HomePage() {
   const [isCmdOpen, setIsCmdOpen] = useState(false);
   const [isResumeOpen, setIsResumeOpen] = useState(false);
   const [isContactOpen, setIsContactOpen] = useState(false);
-  const [deepDiveId, setDeepDiveId] = useState<string | null>(null);
-
-  const handleOpenDeepDive = (id: string) => {
-    setDeepDiveId(id);
-  };
-
-  const handleCloseDeepDive = () => {
-    setDeepDiveId(null);
-  };
 
   return (
     <div className="flex min-h-screen flex-col bg-[#ECEEE9] text-[#121316]">
@@ -35,7 +25,6 @@ export default function HomePage() {
         <ArchitectLayout
           onOpenResume={() => setIsResumeOpen(true)}
           onOpenContact={() => setIsContactOpen(true)}
-          onOpenDeepDive={handleOpenDeepDive}
         />
       </main>
 
@@ -45,7 +34,6 @@ export default function HomePage() {
         onClose={() => setIsCmdOpen(false)}
         onOpenResume={() => setIsResumeOpen(true)}
         onOpenContact={() => setIsContactOpen(true)}
-        onOpenProjectDeepDive={handleOpenDeepDive}
       />
 
       <ResumeModal
@@ -56,11 +44,6 @@ export default function HomePage() {
       <ContactModal
         isOpen={isContactOpen}
         onClose={() => setIsContactOpen(false)}
-      />
-
-      <TechnicalDeepDiveModal
-        itemId={deepDiveId}
-        onClose={handleCloseDeepDive}
       />
     </div>
   );

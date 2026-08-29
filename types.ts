@@ -46,15 +46,6 @@ export interface ProjectItem {
   architectureHighlights: string[];
   stack: string[];
   diagramType: 'rag-pipeline' | 'trip-planner';
-  deepDive: {
-    overview: string;
-    problem: string;
-    solution: string;
-    codeSample: {
-      file: string;
-      code: string;
-    };
-  };
 }
 
 export interface StackCategory {

@@ -46,8 +46,7 @@ npm run dev
 | `components/architect/` · `components/terminal/` · `components/glassmorphism/` | The three layouts |
 | [`components/Navbar.tsx`](components/Navbar.tsx) · [`components/LayoutSwitcherBar.tsx`](components/LayoutSwitcherBar.tsx) | Chrome above the layouts |
 | [`components/CommandPalette.tsx`](components/CommandPalette.tsx) | ⌘K / Ctrl+K palette |
-| [`components/ResumeModal.tsx`](components/ResumeModal.tsx) · [`components/ContactModal.tsx`](components/ContactModal.tsx) · [`components/TechnicalDeepDiveModal.tsx`](components/TechnicalDeepDiveModal.tsx) | The overlays |
-| [`components/SagaRagVisualizer.tsx`](components/SagaRagVisualizer.tsx) · [`components/KonnectifyWorkflowSim.tsx`](components/KonnectifyWorkflowSim.tsx) | Architecture diagrams inside the deep dives |
+| [`components/ResumeModal.tsx`](components/ResumeModal.tsx) · [`components/ContactModal.tsx`](components/ContactModal.tsx) | The overlays |
 
 To change what the site says, edit `content/portfolioData.ts` — all three
 layouts read from it.
