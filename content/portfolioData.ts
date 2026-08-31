@@ -134,26 +134,3 @@ export const stackCategories: StackCategory[] = [
     ]
   }
 ];
-
-export const recruiterFaq = [
-  {
-    question: "What is Roshan's core technical positioning?",
-    answer: "Roshan builds full-stack products end to end — product surfaces in Next.js and React, APIs in NestJS and FastAPI, and the PostgreSQL, Redis, and queue layers underneath that keep them fast."
-  },
-  {
-    question: "What did Roshan build at Konnectify?",
-    answer: "During his internship at Konnectify (Jan 2026 – Jul 2026), an iPaaS no-code platform, Roshan built invite-based user management with minute-level permissions dynamically resolved on the server, task-based crediting on Redis that batches aggregated writes to the DB, and optimized Redux state management for large workflow automation canvases."
-  },
-  {
-    question: "What makes the Saga project technically significant?",
-    answer: "Saga is an end-to-end RAG knowledge base with dedicated extraction workers for PDFs, Markdown, YouTube transcripts, and GitHub repos. It runs background ingestion asynchronously on Celery over Redis, indexes vectors in PostgreSQL with pgvector, and cites exact source chunks with semantic references in a Next.js + FastAPI Turborepo."
-  },
-  {
-    question: "Is Roshan available for full-time / internship opportunities?",
-    answer: "Yes! Available for full-stack, backend, and distributed systems engineering roles."
-  },
-  {
-    question: "Can I inspect the source code and résumé?",
-    answer: "Yes! All projects are linked to public GitHub repositories (Saga: KB-ULT, AI Trip Planner: AI_Trip_Planner) and his résumé is directly accessible via the top navigation or pressing Cmd+K."
-  }
-];

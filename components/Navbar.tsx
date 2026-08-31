@@ -12,8 +12,7 @@ interface NavbarProps {
 const SECTIONS = [
   { id: 'experience', label: 'Experience' },
   { id: 'projects', label: 'Projects' },
-  { id: 'stack', label: 'Stack' },
-  { id: 'faq', label: 'Questions' }
+  { id: 'stack', label: 'Stack' }
 ];
 
 export const Navbar: React.FC<NavbarProps> = ({

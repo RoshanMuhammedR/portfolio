@@ -25,6 +25,13 @@
     /* The one accent */
     --mint: #00FF9D;
     --mint-ink: #076B39;
+
+    /* The night the page ends on. The strip design grounds it in a warm
+       #17160F; this is that value carried across to our cooler ink. */
+    --night: #171A1F;
+    --night-near: #1C1F25;
+    --night-muted: #A2A8AF;
+    --night-faint: #868C93;
   }
 
   html {
@@ -147,4 +154,188 @@
 
 .animate-in.fade-in {
   animation: ui-fade-in 150ms ease-out both;
+}
+
+/* ---------------------------------------------------------------
+   Strip: the click-to-focus system.
+
+   Three independent groups — highlights, projects, stack columns.
+   Picking one holds it and drops its siblings; how far they drop
+   differs per group, named by data-depth. The state lives in React;
+   this only draws it.
+   --------------------------------------------------------------- */
+
+.strip-item {
+  transition: opacity 200ms ease;
+}
+
+.strip-group[data-any="true"] .strip-item {
+  opacity: 0.42;
+}
+
+.strip-group[data-depth="proj"][data-any="true"] .strip-item {
+  opacity: 0.5;
+}
+
+.strip-group[data-depth="col"][data-any="true"] .strip-item {
+  opacity: 0.38;
+}
+
+/* Last, so it outranks the per-group depths at equal specificity. */
+.strip-group[data-any="true"] .strip-item[data-on="true"],
+.strip-group[data-any="true"] .strip-item:hover {
+  opacity: 1;
+}
+
+/* A highlight: the hairline above it thickens and inks in. */
+.strip-hl-rule {
+  height: 1px;
+  background: var(--rule);
+  transition: background 180ms ease, height 180ms ease;
+}
+
+.strip-hl:hover .strip-hl-rule,
+.strip-hl[data-on="true"] .strip-hl-rule {
+  height: 2px;
+  background: var(--ink);
+}
+
+.strip-hl-num {
+  color: #8B93A0;
+  transition: color 180ms ease;
+}
+
+.strip-hl:hover .strip-hl-num,
+.strip-hl[data-on="true"] .strip-hl-num {
+  color: var(--mint-ink);
+}
+
+/* A project and a stack column: the same move, different rule weight. */
+.strip-proj-name,
+.strip-col-title {
+  transition: color 180ms ease;
+}
+
+.strip-proj:hover .strip-proj-name,
+.strip-proj[data-on="true"] .strip-proj-name,
+.strip-col:hover .strip-col-title,
+.strip-col[data-on="true"] .strip-col-title {
+  color: var(--mint-ink);
+}
+
+/* A feature line inside a project. */
+.strip-feat {
+  color: var(--ink-muted);
+  transition: color 150ms ease;
+}
+
+.strip-feat:hover {
+  color: var(--ink);
+}
+
+.strip-feat-dash {
+  color: #8B93A0;
+  transition: color 150ms ease;
+}
+
+.strip-feat:hover .strip-feat-dash {
+  color: var(--mint-ink);
+}
+
+.strip-feat-rule {
+  height: 1px;
+  background: var(--rule);
+  transition: background 150ms ease;
+}
+
+.strip-feat:hover .strip-feat-rule {
+  background: #B9BFB2;
+}
+
+/* A row in a stack column. */
+.strip-row {
+  border-top: 1px solid var(--rule);
+  transition: border-color 150ms ease;
+}
+
+.strip-row:hover {
+  border-color: var(--ink);
+}
+
+.strip-row-name,
+.strip-row-detail {
+  transition: color 150ms ease;
+}
+
+.strip-row:hover .strip-row-name {
+  color: var(--mint-ink);
+}
+
+.strip-row:hover .strip-row-detail {
+  color: var(--ink-muted);
+}
+
+/* A token in a stack line. */
+.strip-tok {
+  transition: color 140ms ease;
+}
+
+.strip-tok:hover {
+  color: var(--ink);
+}
+
+/* ---------------------------------------------------------------
+   Strip: the mint seam sweeps.
+
+   A band of light travelling along a seam hairline. Painted as a
+   background rather than a transform so the travel is measured
+   against its container — the original moved a fixed pixel distance
+   that only worked at a 1440px page width.
+   --------------------------------------------------------------- */
+
+.strip-sweep-track {
+  position: relative;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.strip-sweep {
+  position: absolute;
+  inset: 0;
+  background-repeat: no-repeat;
+  background-size: 260px 100%;
+  background-image: linear-gradient(
+    90deg,
+    rgba(0, 255, 157, 0) 0%,
+    rgba(0, 255, 157, 0.5) 50%,
+    rgba(0, 255, 157, 0) 100%
+  );
+  animation: strip-sweep-x 8s linear infinite;
+}
+
+/* The one in the dark band drifts upward as it crosses, following the
+   58px tilt of the ground it runs along. */
+.strip-sweep-diag {
+  background-size: 320px 1.2px;
+  animation: strip-sweep-diag 9s linear infinite;
+}
+
+@keyframes strip-sweep-x {
+  from { background-position: -260px 0; }
+  to { background-position: calc(100% + 260px) 0; }
+}
+
+@keyframes strip-sweep-diag {
+  from { background-position: -320px 20px; }
+  to { background-position: calc(100% + 320px) -38px; }
+}
+
+/* HANDOVER item 5: reduced motion kills the sweeps outright. Said here
+   rather than left to the blanket 0.01ms rule above, which only happens
+   to park them off the end of their travel. */
+@media (prefers-reduced-motion: reduce) {
+  .strip-sweep {
+    animation: none;
+    opacity: 0;
+  }
 }

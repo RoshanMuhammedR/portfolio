@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Navbar } from "@/components/Navbar";
-import { ArchitectLayout } from "@/components/architect/ArchitectLayout";
+import { StripLayout } from "@/components/strip/StripLayout";
 import { CommandPalette } from "@/components/CommandPalette";
 import { ResumeModal } from "@/components/ResumeModal";
 import { ContactModal } from "@/components/ContactModal";
@@ -22,7 +22,7 @@ export default function HomePage() {
       />
 
       <main id="main" className="flex-1">
-        <ArchitectLayout
+        <StripLayout
           onOpenResume={() => setIsResumeOpen(true)}
           onOpenContact={() => setIsContactOpen(true)}
         />
