@@ -2,36 +2,122 @@
 
 /* Type is supplied by next/font (app/layout.tsx). `--font-sans` is redefined
    here because the layout root carries `font-sans`; without this it resolves to
-   Tailwind's stock system stack and Plus Jakarta Sans never renders. */
+   Tailwind's stock system stack and Plus Jakarta Sans never renders.
+
+   Every colour utility resolves through a runtime variable, so the whole page
+   re-themes from one attribute on <html> rather than from a duplicated set of
+   `dark:` variants on every element. */
 @theme {
   --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
   --font-display: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
+
+  --color-paper: var(--paper);
+  --color-paper-sunk: var(--paper-sunk);
+  --color-card: var(--card);
+  --color-ink: var(--ink);
+  --color-ink-hover: var(--ink-hover);
+  --color-ink-body: var(--ink-body);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-faint: var(--ink-faint);
+  --color-ink-ghost: var(--ink-ghost);
+  --color-on-ink: var(--on-ink);
+  --color-rule: var(--rule);
+  --color-rule-soft: var(--rule-soft);
+  --color-mint: var(--mint);
+  --color-mint-hover: var(--mint-hover);
+  --color-mint-ink: var(--mint-ink);
+  --color-on-mint: var(--on-mint);
+  --color-night: var(--night);
+  --color-night-near: var(--night-near);
+  --color-night-muted: var(--night-muted);
+  --color-night-faint: var(--night-faint);
+  --color-on-night: var(--on-night);
 }
 
 @layer base {
+  /* ---- the plate, by daylight ---- */
   :root {
-    /* The plate */
+    color-scheme: light;
+
     --paper: #ECEEE9;
     --paper-sunk: #E4E7E1;
     --card: #F4F6F1;
-    /* The ink */
+
     --ink: #121316;
+    --ink-hover: #232832;
+    --ink-body: #383E4B;
     --ink-muted: #4E5564;
     --ink-faint: #62697A;
-    /* The rules */
+    /* Marks only — dashes, separators, rule ticks. Never read content: on
+       paper this sits at 2.7:1. */
+    --ink-ghost: #8B93A0;
+    --on-ink: #FFFFFF;
+
     --rule: #D4D8CF;
     --rule-soft: #DFE2DA;
-    /* The one accent */
-    --mint: #00FF9D;
-    --mint-ink: #076B39;
 
-    /* The night the page ends on. The strip design grounds it in a warm
-       #17160F; this is that value carried across to our cooler ink. */
+    --mint: #00FF9D;
+    --mint-hover: #00E88C;
+    --mint-ink: #076B39;
+    --on-mint: #121316;
+
+    /* The night the page ends on: the ground tilts and the dark rises out of
+       it. By daylight that is the page's one dark surface. */
     --night: #171A1F;
     --night-near: #1C1F25;
     --night-muted: #A2A8AF;
     --night-faint: #868C93;
+    --on-night: #ECEEE9;
+
+    --overlay: rgba(10, 11, 13, 0.5);
+    --scroll-thumb: #C4C9BE;
+    --scroll-thumb-hover: #A7AE9E;
+    --plate-line: rgba(18, 19, 22, 0.045);
+    --sweep: rgba(0, 255, 157, 0.5);
+    --panel-shadow: 0 18px 48px -18px rgba(18, 19, 22, 0.3), 0 2px 6px -2px rgba(18, 19, 22, 0.12);
+  }
+
+  /* ---- the same plate after dark ----
+     Not an inversion. The drawing keeps its logic: the page still travels from
+     open ground down into night, so the final band stays the deepest surface
+     rather than becoming the lightest. What flips is the solid — a graphite
+     monolith on pale ground by day, a lit form standing out of the dark here. */
+  [data-theme='dark'] {
+    color-scheme: dark;
+
+    --paper: #16181C;
+    --paper-sunk: #101216;
+    --card: #1E2126;
+
+    --ink: #E7EAE6;
+    --ink-hover: #FFFFFF;
+    --ink-body: #C6CDD8;
+    --ink-muted: #A8AFBA;
+    --ink-faint: #8A93A0;
+    --ink-ghost: #6E7683;
+    --on-ink: #101216;
+
+    --rule: #2E333A;
+    --rule-soft: #24282E;
+
+    --mint: #00FF9D;
+    --mint-hover: #57FFC0;
+    --mint-ink: #4FFFC0;
+    --on-mint: #06231A;
+
+    --night: #0A0C0F;
+    --night-near: #0F1114;
+    --night-muted: #9AA1AB;
+    --night-faint: #79808A;
+    --on-night: #E7EAE6;
+
+    --overlay: rgba(0, 0, 0, 0.66);
+    --scroll-thumb: #333940;
+    --scroll-thumb-hover: #454C55;
+    --plate-line: rgba(231, 234, 230, 0.05);
+    --sweep: rgba(0, 255, 157, 0.62);
+    --panel-shadow: 0 18px 48px -18px rgba(0, 0, 0, 0.72), 0 2px 6px -2px rgba(0, 0, 0, 0.5);
   }
 
   html {
@@ -51,7 +137,7 @@
   /* The browser surfaces the design would otherwise leave to the UA. */
   ::selection {
     background: var(--mint);
-    color: #000;
+    color: var(--on-mint);
   }
 
   :focus-visible {
@@ -84,16 +170,9 @@
 .bg-plate {
   background-color: var(--paper);
   background-image:
-    linear-gradient(to right, rgba(18, 19, 22, 0.045) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(18, 19, 22, 0.045) 1px, transparent 1px);
+    linear-gradient(to right, var(--plate-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--plate-line) 1px, transparent 1px);
   background-size: 32px 32px;
-}
-
-.bg-plate-fine {
-  background-size: 16px 16px;
-  background-image:
-    linear-gradient(to right, rgba(18, 19, 22, 0.035) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(18, 19, 22, 0.035) 1px, transparent 1px);
 }
 
 /* ---------------------------------------------------------------
@@ -137,13 +216,13 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #C4C9BE;
+  background: var(--scroll-thumb);
   border: 2px solid var(--paper);
   border-radius: 5px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #A7AE9E;
+  background: var(--scroll-thumb-hover);
 }
 
 /* Modal entrance */
@@ -187,21 +266,27 @@
   opacity: 1;
 }
 
-/* A highlight: the hairline above it thickens and inks in. */
+/* A highlight: the hairline above it thickens and inks in. The rule is always
+   2px and rests at half height, so the thickening is a transform rather than an
+   animated `height`, which would relayout the column on every hover. */
 .strip-hl-rule {
-  height: 1px;
+  height: 2px;
   background: var(--rule);
-  transition: background 180ms ease, height 180ms ease;
+  transform: scaleY(0.5);
+  transform-origin: bottom;
+  transition: background 180ms ease, transform 180ms ease;
 }
 
 .strip-hl:hover .strip-hl-rule,
 .strip-hl[data-on="true"] .strip-hl-rule {
-  height: 2px;
   background: var(--ink);
+  transform: scaleY(1);
 }
 
+/* --ink-faint, not the lighter grey the dashes use: these numerals are read
+   content, and the lighter value only reaches 2.7:1 on paper. */
 .strip-hl-num {
-  color: #8B93A0;
+  color: var(--ink-faint);
   transition: color 180ms ease;
 }
 
@@ -234,7 +319,7 @@
 }
 
 .strip-feat-dash {
-  color: #8B93A0;
+  color: var(--ink-ghost);
   transition: color 150ms ease;
 }
 
@@ -249,7 +334,7 @@
 }
 
 .strip-feat:hover .strip-feat-rule {
-  background: #B9BFB2;
+  background: var(--ink-faint);
 }
 
 /* A row in a stack column. */
@@ -306,9 +391,9 @@
   background-size: 260px 100%;
   background-image: linear-gradient(
     90deg,
-    rgba(0, 255, 157, 0) 0%,
-    rgba(0, 255, 157, 0.5) 50%,
-    rgba(0, 255, 157, 0) 100%
+    transparent 0%,
+    var(--sweep) 50%,
+    transparent 100%
   );
   animation: strip-sweep-x 8s linear infinite;
 }
@@ -338,4 +423,141 @@
     animation: none;
     opacity: 0;
   }
+}
+
+/* ---------------------------------------------------------------
+   Dialogs.
+
+   A sheet of the plate lifted off the page: raised surface, a real
+   rule, and a shadow with both an offset and a soft blur — not the
+   zero-offset halo a stock utility gives you. Anything sitting on a
+   panel recedes to --paper, so the two surfaces never read as the
+   same card stacked on itself.
+   --------------------------------------------------------------- */
+
+.panel {
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: 14px;
+  box-shadow: var(--panel-shadow);
+}
+
+/* A field is cut into the panel, so it takes the lower surface. */
+.field {
+  width: 100%;
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  background: var(--paper);
+  color: var(--ink);
+  transition: border-color 150ms ease;
+}
+
+.field::placeholder {
+  color: var(--ink-faint);
+}
+
+.field:hover {
+  border-color: var(--ink-faint);
+}
+
+/* The global focus ring is the page's, and it is the one dialogs use too. */
+.field:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 1px;
+  border-color: transparent;
+}
+
+/* ---------------------------------------------------------------
+   Project schematics.
+
+   Steps read left to right on a wide screen and top to bottom on a
+   narrow one, so the connector has to change axis with them.
+   --------------------------------------------------------------- */
+
+/* Stacked: it points down, into the gap beneath its own step. */
+.schematic-arrow {
+  position: absolute;
+  left: 0;
+  bottom: -13px;
+  width: 7px;
+  height: 7px;
+  border-right: 1px solid var(--ink-ghost);
+  border-bottom: 1px solid var(--ink-ghost);
+  transform: rotate(45deg);
+}
+
+/* Two across: point right, except from the second of a pair, which has to
+   turn the corner down to the next row. */
+@media (min-width: 640px) {
+  .schematic-arrow {
+    left: auto;
+    right: -22px;
+    bottom: auto;
+    top: 2px;
+    transform: rotate(-45deg);
+  }
+
+  .schematic-step:nth-child(2n) .schematic-arrow {
+    left: 0;
+    right: auto;
+    top: auto;
+    bottom: -13px;
+    transform: rotate(45deg);
+  }
+}
+
+/* Four across: every arrow points right, along the row. */
+@media (min-width: 1024px) {
+  .schematic-step:nth-child(2n) .schematic-arrow {
+    left: auto;
+    right: -22px;
+    bottom: auto;
+    top: 2px;
+    transform: rotate(-45deg);
+  }
+}
+
+/* ---------------------------------------------------------------
+   Click-to-focus, made visible.
+
+   The mechanic is worth nothing if nobody finds it, and a heading
+   that happens to be a button announces nothing. Every trigger
+   carries the same small square: an outline at rest, filled mint
+   when that item is the one being held.
+   --------------------------------------------------------------- */
+
+.strip-hl-title,
+.strip-proj-name,
+.strip-col-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+}
+
+.strip-hl-title::after,
+.strip-proj-name::after,
+.strip-col-title::after {
+  content: "";
+  width: 7px;
+  height: 7px;
+  flex: none;
+  border: 1px solid var(--ink-ghost);
+  background: transparent;
+  transition: background 160ms ease, border-color 160ms ease;
+}
+
+.strip-hl:hover .strip-hl-title::after,
+.strip-proj:hover .strip-proj-name::after,
+.strip-col:hover .strip-col-title::after,
+.strip-hl-title:hover::after,
+.strip-proj-name:hover::after,
+.strip-col-title:hover::after {
+  border-color: var(--mint-ink);
+}
+
+.strip-hl[data-on="true"] .strip-hl-title::after,
+.strip-proj[data-on="true"] .strip-proj-name::after,
+.strip-col[data-on="true"] .strip-col-title::after {
+  background: var(--mint);
+  border-color: var(--mint);
 }

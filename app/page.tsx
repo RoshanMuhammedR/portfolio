@@ -13,7 +13,7 @@ export default function HomePage() {
   const [isContactOpen, setIsContactOpen] = useState(false);
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#ECEEE9] text-[#121316]">
+    <div className="flex min-h-screen flex-col bg-paper text-ink">
       {/* Top Fixed Header */}
       <Navbar
         onOpenCmd={() => setIsCmdOpen(true)}

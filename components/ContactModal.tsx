@@ -1,16 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import { 
-  X, 
-  Mail, 
-  MapPin, 
-  Copy, 
-  Check, 
-  Github, 
-  Linkedin, 
-  Send
-} from 'lucide-react';
+import { Check, Copy, Github, Linkedin, Mail, MapPin, X } from 'lucide-react';
 import { identityData } from '@/content/portfolioData';
 import { useDialog } from '@/lib/useDialog';
 
@@ -18,6 +9,46 @@ interface ContactModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
+
+/** One of the two channels that reach Roshan directly, with its own copy button. */
+const Channel: React.FC<{
+  label: string;
+  value: string;
+  href?: string;
+  copied: boolean;
+  onCopy: () => void;
+}> = ({ label, value, href, copied, onCopy }) => (
+  <div className="flex flex-col gap-1.5 rounded-lg border border-rule bg-paper p-3.5">
+    <div className="flex items-center justify-between gap-2">
+      <span className="font-mono text-[11px] font-semibold tracking-[0.12em] text-ink-faint uppercase">
+        {label}
+      </span>
+      <button
+        type="button"
+        onClick={onCopy}
+        aria-label={`Copy ${label.toLowerCase()}`}
+        className="flex cursor-pointer items-center gap-1 font-mono text-[11px] font-semibold text-mint-ink transition-opacity hover:opacity-70"
+      >
+        {copied ? (
+          <Check className="h-3 w-3" aria-hidden="true" />
+        ) : (
+          <Copy className="h-3 w-3" aria-hidden="true" />
+        )}
+        <span>{copied ? 'Copied' : 'Copy'}</span>
+      </button>
+    </div>
+    {href ? (
+      <a
+        href={href}
+        className="truncate font-mono text-[13px] font-semibold text-ink hover:text-mint-ink"
+      >
+        {value}
+      </a>
+    ) : (
+      <span className="truncate font-mono text-[13px] font-semibold text-ink">{value}</span>
+    )}
+  </div>
+);
 
 export const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose }) => {
   const [copiedField, setCopiedField] = useState<string | null>(null);
@@ -40,172 +71,180 @@ export const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose }) =
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const subject = encodeURIComponent(`Inquiry from ${formData.name || 'Recruiter'} (${formData.roleOrCompany || 'Tech Team'})`);
-    const body = encodeURIComponent(`Hi Roshan,\n\n${formData.message}\n\nFrom: ${formData.name}\nEmail: ${formData.email}\nCompany: ${formData.roleOrCompany}`);
+    const subject = encodeURIComponent(
+      `Inquiry from ${formData.name || 'Recruiter'} (${formData.roleOrCompany || 'Tech Team'})`
+    );
+    const body = encodeURIComponent(
+      `Hi Roshan,\n\n${formData.message}\n\nFrom: ${formData.name}\nEmail: ${formData.email}\nCompany: ${formData.roleOrCompany}`
+    );
     window.location.href = `mailto:${identityData.email}?subject=${subject}&body=${body}`;
   };
 
+  const field =
+    'field px-3 py-2.5 text-[13px] focus:outline-none';
+  const labelClass = 'mb-1.5 block font-mono text-[11px] font-semibold text-ink-faint';
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/50 backdrop-blur-xs animate-in fade-in duration-150" onClick={onClose}>
-      <div 
-        className="w-full max-w-xl bg-[#F4F6F1] border border-[#D4D8CF] rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[90vh]"
+    <div
+      className="animate-in fade-in fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay)] p-4 backdrop-blur-xs duration-150 sm:p-6"
+      onClick={onClose}
+    >
+      <div
+        className="panel flex max-h-[90vh] w-full max-w-xl flex-col overflow-hidden"
         ref={panelRef}
         role="dialog"
         aria-modal="true"
-        aria-label="Contact Roshan Muhammed R"
+        aria-labelledby="contact-title"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#DCDFD6] bg-[#ECEFEA]">
-          <div className="flex items-center space-x-2.5">
-            <div className="w-8 h-8 rounded-full bg-[#00FF9D]/30 border border-[#00FF9D] flex items-center justify-center text-[#121316]">
-              <Mail className="w-4 h-4 text-[#0B8043]" />
-            </div>
+        <div className="flex items-start justify-between gap-4 border-b border-rule px-6 py-4">
+          <div className="flex items-center gap-3">
+            <span
+              aria-hidden="true"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-rule bg-paper text-ink-faint"
+            >
+              <Mail className="h-4 w-4" />
+            </span>
             <div>
-              <h2 className="text-base font-bold text-[#121316] tracking-tight">Get in Touch with Roshan</h2>
-              <p className="text-xs text-[#585F6B] font-mono">Available for Full-Time & Systems Engineering Roles</p>
+              <h2 id="contact-title" className="text-base font-bold tracking-tight text-ink">
+                Get in Touch with Roshan
+              </h2>
+              <p className="font-mono text-[11px] text-ink-faint">
+                Available for full-time &amp; systems engineering roles
+              </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-full text-[#585F6B] hover:text-[#121316] hover:bg-[#DCDFD6] transition-colors cursor-pointer"
+            aria-label="Close"
+            className="-mr-1.5 cursor-pointer rounded-full p-1.5 text-ink-faint transition-colors hover:bg-paper hover:text-ink"
           >
-            <X className="w-5 h-5" />
+            <X className="h-5 w-5" aria-hidden="true" />
           </button>
         </div>
 
-        {/* Modal Body */}
-        <div className="p-6 overflow-y-auto space-y-6 text-sm text-[#121316]">
-          {/* Quick Direct Channels */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {/* Email Card */}
-            <div className="p-3.5 rounded-lg bg-[#EAEFE6] border border-[#CCD2C5] flex flex-col justify-between">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-[11px] font-mono text-[#585F6B] font-bold">EMAIL ADDRESS</span>
-                <button
-                  onClick={() => handleCopy(identityData.email, 'email')}
-                  className="text-xs font-mono text-[#0A733E] hover:underline flex items-center gap-1 cursor-pointer font-semibold"
-                >
-                  {copiedField === 'email' ? <Check className="w-3 h-3 text-[#00B86B]" /> : <Copy className="w-3 h-3" />}
-                  <span>{copiedField === 'email' ? 'Copied' : 'Copy'}</span>
-                </button>
-              </div>
-              <a 
-                href={`mailto:${identityData.email}`} 
-                className="text-xs font-mono text-[#121316] font-semibold hover:text-[#0A733E] truncate"
-              >
-                {identityData.email}
-              </a>
-            </div>
-
-            {/* Phone Card */}
-            <div className="p-3.5 rounded-lg bg-[#EAEFE6] border border-[#CCD2C5] flex flex-col justify-between">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-[11px] font-mono text-[#585F6B] font-bold">PHONE / WHATSAPP</span>
-                <button
-                  onClick={() => handleCopy(identityData.phone, 'phone')}
-                  className="text-xs font-mono text-[#0A733E] hover:underline flex items-center gap-1 cursor-pointer font-semibold"
-                >
-                  {copiedField === 'phone' ? <Check className="w-3 h-3 text-[#00B86B]" /> : <Copy className="w-3 h-3" />}
-                  <span>{copiedField === 'phone' ? 'Copied' : 'Copy'}</span>
-                </button>
-              </div>
-              <span className="text-xs font-mono text-[#121316] font-semibold">
-                {identityData.phone}
-              </span>
-            </div>
+        <div className="space-y-5 overflow-y-auto p-6">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <Channel
+              label="Email"
+              value={identityData.email}
+              href={`mailto:${identityData.email}`}
+              copied={copiedField === 'email'}
+              onCopy={() => handleCopy(identityData.email, 'email')}
+            />
+            <Channel
+              label="Phone / WhatsApp"
+              value={identityData.phone}
+              copied={copiedField === 'phone'}
+              onCopy={() => handleCopy(identityData.phone, 'phone')}
+            />
           </div>
 
-          {/* Social Links Bar */}
-          <div className="flex items-center justify-between p-3 rounded-lg bg-[#EAEFE6] border border-[#CCD2C5] text-xs font-mono">
-            <div className="flex items-center gap-2 text-[#585F6B]">
-              <MapPin className="w-3.5 h-3.5 text-[#0A733E]" />
+          <div className="flex flex-wrap items-center justify-between gap-3 border-y border-rule py-3 font-mono text-[12px]">
+            <span className="flex items-center gap-2 text-ink-faint">
+              <MapPin className="h-3.5 w-3.5" aria-hidden="true" />
               <span>{identityData.location}</span>
-            </div>
-            <div className="flex items-center space-x-3">
+            </span>
+            <span className="flex items-center gap-4">
               <a
-                href={`https://${identityData.github}`}
+                href={identityData.githubUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="text-[#585F6B] hover:text-[#121316] flex items-center gap-1 font-semibold"
+                className="flex items-center gap-1.5 font-semibold text-ink-muted transition-colors hover:text-mint-ink"
               >
-                <Github className="w-3.5 h-3.5" />
+                <Github className="h-3.5 w-3.5" aria-hidden="true" />
                 <span>GitHub</span>
               </a>
-              <span>·</span>
               <a
-                href={`https://${identityData.linkedin}`}
+                href={identityData.linkedinUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="text-[#585F6B] hover:text-[#121316] flex items-center gap-1 font-semibold"
+                className="flex items-center gap-1.5 font-semibold text-ink-muted transition-colors hover:text-mint-ink"
               >
-                <Linkedin className="w-3.5 h-3.5" />
+                <Linkedin className="h-3.5 w-3.5" aria-hidden="true" />
                 <span>LinkedIn</span>
               </a>
-            </div>
+            </span>
           </div>
 
-          {/* Direct Message Form */}
-          <form onSubmit={handleSubmit} className="space-y-4 pt-2">
-            <div className="text-xs font-mono uppercase tracking-wider text-[#585F6B] font-bold">
-              SEND DIRECT TRANSMISSION
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <h3 className="font-mono text-[11px] font-semibold tracking-[0.14em] text-ink-faint uppercase">
+                Write a message
+              </h3>
+              <p className="mt-1.5 text-[12px] text-ink-faint">
+                This opens your own mail app with the message ready to send &mdash; nothing
+                is submitted from this page.
+              </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div>
-                <label className="block text-xs font-mono text-[#585F6B] mb-1 font-semibold">Your Name</label>
+                <label htmlFor="contact-name" className={labelClass}>
+                  Your name
+                </label>
                 <input
+                  id="contact-name"
                   type="text"
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="e.g. Alex (Recruiter / Tech Lead)"
-                  className="w-full px-3 py-2 rounded-lg bg-[#FFFFFF] border border-[#CCD2C5] text-[#121316] placeholder-[#8A92A0] text-xs focus:outline-none focus:border-[#121316] focus:ring-1 focus:ring-[#121316]"
+                  placeholder="Alex Rivera"
+                  className={field}
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-mono text-[#585F6B] mb-1 font-semibold">Your Email</label>
+                <label htmlFor="contact-email" className={labelClass}>
+                  Your email
+                </label>
                 <input
+                  id="contact-email"
                   type="email"
                   required
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   placeholder="alex@company.com"
-                  className="w-full px-3 py-2 rounded-lg bg-[#FFFFFF] border border-[#CCD2C5] text-[#121316] placeholder-[#8A92A0] text-xs focus:outline-none focus:border-[#121316] focus:ring-1 focus:ring-[#121316]"
+                  className={field}
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-mono text-[#585F6B] mb-1 font-semibold">Company or Role Context</label>
+              <label htmlFor="contact-role" className={labelClass}>
+                Company or role{' '}
+                <span className="font-normal text-ink-ghost">(optional)</span>
+              </label>
               <input
+                id="contact-role"
                 type="text"
                 value={formData.roleOrCompany}
                 onChange={(e) => setFormData({ ...formData, roleOrCompany: e.target.value })}
-                placeholder="e.g. Senior Frontend / Full-Stack Position"
-                className="w-full px-3 py-2 rounded-lg bg-[#FFFFFF] border border-[#CCD2C5] text-[#121316] placeholder-[#8A92A0] text-xs focus:outline-none focus:border-[#121316] focus:ring-1 focus:ring-[#121316]"
+                placeholder="Senior full-stack, Acme"
+                className={field}
               />
             </div>
 
             <div>
-              <label className="block text-xs font-mono text-[#585F6B] mb-1 font-semibold">Message</label>
+              <label htmlFor="contact-message" className={labelClass}>
+                Message
+              </label>
               <textarea
+                id="contact-message"
                 rows={4}
                 required
                 value={formData.message}
                 onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                placeholder="Hi Roshan, we loved your work on Redis task metering and Saga RAG indexing. Let's talk about..."
-                className="w-full px-3 py-2 rounded-lg bg-[#FFFFFF] border border-[#CCD2C5] text-[#121316] placeholder-[#8A92A0] text-xs focus:outline-none focus:border-[#121316] focus:ring-1 focus:ring-[#121316]"
+                placeholder="We are hiring for a backend role and your work on Redis task metering caught our eye…"
+                className={`${field} resize-y`}
               />
             </div>
 
             <button
               type="submit"
-              className="w-full py-3 rounded-full bg-[#232832] hover:bg-[#16181F] text-white font-mono text-xs uppercase font-bold tracking-wider flex items-center justify-center space-x-2 transition-all cursor-pointer shadow-xs"
+              className="w-full cursor-pointer rounded-full bg-ink px-6 py-3.5 text-sm font-bold text-on-ink transition-colors hover:bg-ink-hover"
             >
-              <Send className="w-3.5 h-3.5 text-[#00FF9D]" />
-              <span>Launch Mail Client</span>
+              Open in your mail app
             </button>
           </form>
         </div>

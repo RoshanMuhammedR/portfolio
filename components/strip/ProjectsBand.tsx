@@ -6,6 +6,8 @@ import { projectsData } from '@/content/portfolioData';
 import { useFocusGroup } from '@/lib/useFocusGroup';
 import { BandLabel } from './BandLabel';
 import { SeamSweep } from './SeamSweep';
+import { BandRule } from './BandRule';
+import { ProjectSchematic } from './ProjectSchematic';
 
 /** Shown beside a project title, deliberately outside the heading element so
  *  the accessible name stays the project name alone. */
@@ -31,17 +33,17 @@ export const ProjectsBand: React.FC = () => {
 
         <h2
           id="projects-heading"
-          className="text-[28px] font-bold leading-[1.1] tracking-[-0.032em] text-[#121316] sm:text-[36px]"
+          className="text-[28px] font-bold leading-[1.1] tracking-[-0.032em] text-ink sm:text-[36px]"
         >
           Things that are running
         </h2>
 
-        <p className="mt-3.5 max-w-[620px] text-base leading-[1.62] text-[#4E5564] sm:text-[16.5px]">
+        <p className="mt-4 max-w-[620px] text-base leading-[1.62] text-ink-muted sm:text-[16.5px]">
           Both are deployed and open source. Each one moves its expensive work off the
           request path.
         </p>
 
-        <div {...groupProps} className={`${groupProps.className} mt-10 flex flex-col gap-11`}>
+        <div {...groupProps} className={`${groupProps.className} mt-12 flex flex-col gap-14`}>
           {projectsData.map((project) => {
             const pick = itemProps(project.id);
             return (
@@ -50,26 +52,34 @@ export const ProjectsBand: React.FC = () => {
                 className="strip-item strip-proj"
                 data-on={pick['data-on']}
               >
-                <div aria-hidden="true" className="h-0.5 bg-[#121316]" />
+                <BandRule />
 
                 <div className="flex flex-col gap-5 pt-6 lg:flex-row lg:items-start lg:justify-between lg:gap-8">
-                  <div className="flex flex-col gap-1.5">
-                    <h3 className="text-[24px] font-bold tracking-[-0.028em] sm:text-[27px]">
+                  <div className="flex flex-col gap-2">
+                    {/* The project's own name outranks the band heading: on this
+                        page the work is the argument, not the section label. */}
+                    <h3 className="text-[30px] font-bold tracking-[-0.032em] sm:text-[36px] lg:text-[40px]">
                       <button
                         type="button"
                         onClick={pick.onClick}
                         aria-pressed={pick['aria-pressed']}
-                        className="strip-proj-name cursor-pointer text-left text-[#121316]"
+                        className="strip-proj-name cursor-pointer text-left text-ink"
                       >
                         {project.title}
                       </button>
                     </h3>
-                    <p className="flex flex-wrap items-center gap-2.5 text-[14.5px] text-[#62697A]">
+                    <p className="flex flex-wrap items-center gap-2.5 text-[14.5px] text-ink-faint">
+                      {project.liveUrl && (
+                        <span className="flex items-center gap-1.5 font-mono text-[11.5px] tracking-[0.1em] text-mint-ink uppercase">
+                          <span aria-hidden="true" className="h-[7px] w-[7px] bg-mint" />
+                          Live
+                        </span>
+                      )}
                       <span>{project.subtitle}</span>
-                      <span aria-hidden="true" className="text-[#8B93A0]">
+                      <span aria-hidden="true" className="text-ink-ghost">
                         &middot;
                       </span>
-                      <span className="font-mono text-[12.5px] text-[#62697A]">
+                      <span className="font-mono text-[12.5px] text-ink-faint">
                         {projectOrigin[project.id]}
                       </span>
                     </p>
@@ -81,7 +91,7 @@ export const ProjectsBand: React.FC = () => {
                         href={project.liveUrl}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex items-center gap-2 rounded-md bg-[#00FF9D] px-4 py-3 text-[13.5px] font-semibold text-[#121316] transition-colors hover:bg-[#00E88C]"
+                        className="inline-flex items-center gap-2 rounded-md bg-mint px-4 py-3 text-[13.5px] font-semibold text-on-mint transition-colors hover:bg-mint-hover"
                       >
                         <span>Open live</span>
                         <ExternalLink className="h-[13px] w-[13px]" aria-hidden="true" />
@@ -92,7 +102,7 @@ export const ProjectsBand: React.FC = () => {
                         href={project.repoUrl}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex items-center gap-2 rounded-md border border-[#D4D8CF] bg-[#F4F6F1] px-4 py-3 text-[13.5px] text-[#4E5564] transition-colors hover:border-[#121316] hover:text-[#121316]"
+                        className="inline-flex items-center gap-2 rounded-md border border-rule bg-card px-4 py-3 text-[13.5px] text-ink-muted transition-colors hover:border-ink hover:text-ink"
                       >
                         <GitBranch className="h-[13px] w-[13px]" aria-hidden="true" />
                         <span>Source</span>
@@ -102,7 +112,7 @@ export const ProjectsBand: React.FC = () => {
                 </div>
 
                 <div className="grid grid-cols-1 gap-x-16 gap-y-7 pt-6 lg:grid-cols-12">
-                  <p className="text-[15px] leading-[1.66] text-[#383E4B] lg:col-span-5">
+                  <p className="text-[15px] leading-[1.66] text-ink-body lg:col-span-5">
                     {project.description}
                   </p>
 
@@ -124,10 +134,12 @@ export const ProjectsBand: React.FC = () => {
                   </ul>
                 </div>
 
-                <p className="pt-7 font-mono text-[13px] leading-relaxed text-[#62697A]">
+                <ProjectSchematic type={project.diagramType} label={project.title} />
+
+                <p className="pt-7 font-mono text-[13px] leading-relaxed text-ink-muted">
                   {project.stack.map((tool, i) => (
                     <React.Fragment key={tool}>
-                      {i > 0 && <span className="text-[#8B93A0]"> &middot; </span>}
+                      {i > 0 && <span className="text-ink-faint"> &middot; </span>}
                       <span className="strip-tok">{tool}</span>
                     </React.Fragment>
                   ))}

@@ -59,9 +59,19 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#ECEEE9",
-  colorScheme: "light",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ECEEE9" },
+    { media: "(prefers-color-scheme: dark)", color: "#16181C" },
+  ],
 };
+
+/**
+ * Resolves the theme before the first paint, so the page never shows the wrong
+ * plate for a frame. It runs blocking and ahead of the body on purpose: this is
+ * the one thing that cannot wait for hydration. Kept to a single expression and
+ * wrapped in a try so a locked-down localStorage cannot break rendering.
+ */
+const themeBootstrap = `try{var t=localStorage.getItem("theme");if(t!=="light"&&t!=="dark"){t=matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"}document.documentElement.dataset.theme=t}catch(e){document.documentElement.dataset.theme="light"}`;
 
 export default function RootLayout({
   children,
@@ -70,11 +80,15 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${jakarta.variable} ${jetbrainsMono.variable} scroll-smooth`}
+      suppressHydrationWarning
     >
-      <body className="min-h-screen bg-[#ECEEE9] text-[#121316] antialiased">
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeBootstrap }} />
+      </head>
+      <body className="min-h-screen bg-paper text-ink antialiased">
         <a
           href="#main"
-          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-[#121316] focus:px-5 focus:py-3 focus:text-sm focus:font-bold focus:text-white"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-ink focus:px-5 focus:py-3 focus:text-sm focus:font-bold focus:text-on-ink"
         >
           Skip to content
         </a>

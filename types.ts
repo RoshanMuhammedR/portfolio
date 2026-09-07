@@ -45,8 +45,11 @@ export interface ProjectItem {
   description: string;
   architectureHighlights: string[];
   stack: string[];
-  diagramType: 'rag-pipeline' | 'trip-planner';
+  diagramType: DiagramType;
 }
+
+/** Which schematic a project's section draws to make its argument. */
+export type DiagramType = 'rag-pipeline' | 'trip-planner';
 
 export interface StackCategory {
   layer: 'Surface' | 'Logic' | 'Foundations' | 'Languages';

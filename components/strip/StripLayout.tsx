@@ -28,7 +28,7 @@ export const StripLayout: React.FC<StripLayoutProps> = ({
   const hostRef = useRef<HTMLDivElement>(null);
 
   return (
-    <div ref={hostRef} className="relative w-full overflow-hidden bg-[#ECEEE9]">
+    <div ref={hostRef} className="relative w-full overflow-hidden bg-paper">
       <StripCanvas hostRef={hostRef} />
 
       <div className="relative z-10">

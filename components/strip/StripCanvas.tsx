@@ -44,7 +44,8 @@ export const StripCanvas: React.FC<{
       // drawn relative to their seams.
       return {
         seams: [exp, proj, stack],
-        tops: { exp: exp + 64, proj: proj + 64, stack: stack + 64, night }
+        tops: { exp: exp + 64, proj: proj + 64, stack: stack + 64, night },
+        height: host.clientHeight
       };
     };
 
@@ -52,22 +53,36 @@ export const StripCanvas: React.FC<{
       const anchors = measure();
       if (!anchors) return;
       teardown();
-      teardown = bootScene(cv, host, anchors);
+      const theme = document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
+      teardown = bootScene(cv, host, anchors, theme);
     };
 
     boot();
 
+    // The palette is resolved once per boot, so switching plates means drawing
+    // the scene again rather than tinting what is already there.
+    const themeWatch = new MutationObserver(boot);
+    themeWatch.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['data-theme']
+    });
+
     let lastW = host.clientWidth;
     let lastH = host.clientHeight;
+    let lastVH = window.innerHeight;
 
     const onResize = () => {
       const w = host.clientWidth;
       const h = host.clientHeight;
-      // A mobile URL bar sliding away changes the height by a few pixels and is
-      // not worth reallocating a page-tall backing store for.
-      if (w === lastW && Math.abs(h - lastH) < 8) return;
+      const vh = window.innerHeight;
+      // The page getting taller matters because the scene is anchored to the
+      // bands; the viewport getting taller matters because the canvas is the
+      // viewport. A mobile URL bar sliding away moves the second by a few
+      // pixels and is not worth a reallocation.
+      if (w === lastW && Math.abs(h - lastH) < 8 && Math.abs(vh - lastVH) < 40) return;
       lastW = w;
       lastH = h;
+      lastVH = vh;
       window.clearTimeout(timer);
       timer = window.setTimeout(boot, 120);
     };
@@ -89,16 +104,21 @@ export const StripCanvas: React.FC<{
       cancelled = true;
       window.removeEventListener('resize', onResize);
       observer.disconnect();
+      themeWatch.disconnect();
       window.clearTimeout(timer);
       teardown();
     };
   }, [hostRef]);
 
+  // Fixed and viewport-sized. The drawing is still one continuous surface in
+  // page coordinates — it is translated by the scroll offset rather than being
+  // cut into pieces — but the backing store only ever has to cover a screen,
+  // which is what lets it render at the display's real pixel density.
   return (
     <canvas
       ref={canvasRef}
       aria-hidden="true"
-      className="pointer-events-none absolute inset-0 h-full w-full"
+      className="pointer-events-none fixed inset-0 h-full w-full"
     />
   );
 };
