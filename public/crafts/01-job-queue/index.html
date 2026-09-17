@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>01 · Job queue — Crafts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0c0d0c; --line: #232421; --muted: #6f706b; --dim: #a4a5a1; --text: #ecede9;
+    --teal: #5ca59a; --teal-2: #85c3b8; --amber: #e8a33c; --red: #e5484d;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: radial-gradient(1100px 620px at 62% 115%, #11201c 0%, var(--bg) 62%);
+    color: var(--text); font-family: Geist, ui-sans-serif, system-ui, sans-serif; overflow: hidden;
+  }
+  canvas { position: fixed; inset: 0; width: 100%; height: 100%; }
+  .meta { position: fixed; top: 24px; left: 28px; font: 500 12px/1.5 "Geist Mono", ui-monospace, monospace; color: var(--muted); }
+  .meta b { color: var(--dim); font-weight: 500; }
+  .hud { position: fixed; top: 22px; right: 28px; display: flex; gap: 28px; font: 500 11px/1 "Geist Mono", monospace; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+  .hud b { display: block; margin-top: 8px; font: 600 22px/1 Geist, sans-serif; letter-spacing: -.02em; color: var(--text); text-transform: none; }
+  .hud .r b { color: var(--amber); } .hud .d b { color: var(--red); }
+  .controls { position: fixed; left: 28px; bottom: 24px; display: flex; gap: 16px; align-items: center; font: 500 12px/1 "Geist Mono", monospace; color: var(--muted); }
+  button { all: unset; cursor: pointer; padding: 9px 14px; border: 1px solid var(--line); border-radius: 8px; color: var(--text); background: #131412; font: 500 12px/1 Geist, sans-serif; transition: border-color .15s, background .15s; }
+  button:hover { border-color: #3a3b37; background: #181917; }
+  label { display: flex; gap: 10px; align-items: center; }
+  input[type=range] { accent-color: var(--teal); width: 120px; }
+</style>
+</head>
+<body>
+<canvas id="c" aria-label="A job queue: producers enqueue jobs, workers process them, failures retry and eventually land in a dead-letter lane"></canvas>
+<div class="meta"><b>01</b> / Job queue — producers, workers, retries and a dead-letter lane</div>
+<div class="hud">
+  <span>processed<b id="done">0</b></span>
+  <span class="r">retried<b id="retry">0</b></span>
+  <span class="d">dead-lettered<b id="dead">0</b></span>
+</div>
+<div class="controls">
+  <button id="burst">Burst +24 jobs</button>
+  <label>workers <input id="workers" type="range" min="1" max="6" value="4"> <span id="wn">4</span></label>
+</div>
+<script>
+// A seeded generator, so the board looks the same every time it is captured.
+function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const rng = mulberry32(11);
+
+const c = document.getElementById("c");
+const g = c.getContext("2d");
+let W = 0, H = 0;
+
+const producers = [{ name: "api" }, { name: "webhook" }, { name: "cron" }];
+const workers = [];
+let jobs = [];
+const queue = [];      // index 0 is the front
+const deadLane = [];
+const stats = { done: 0, retry: 0, dead: 0 };
+let L = {};
+let nextId = 1;
+
+function layout() {
+  const qx0 = W * 0.30, qx1 = W * 0.60, qy = H * 0.47;
+  L = { px: W * 0.14, qx0, qx1, qy, wx: W * 0.74, dy: H * 0.80, slot: Math.max(15, Math.min(24, (qx1 - qx0) / 15)) };
+  producers.forEach((p, i) => { p.x = L.px; p.y = qy + (i - 1) * Math.min(120, H * 0.15); });
+  const n = workers.length, gap = Math.min(78, (H * 0.56) / Math.max(n, 1));
+  workers.forEach((w, i) => { w.x = L.wx; w.y = qy + (i - (n - 1) / 2) * gap; });
+}
+
+function resize() {
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  W = innerWidth; H = innerHeight;
+  c.width = W * dpr; c.height = H * dpr;
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  layout();
+}
+
+function setWorkers(n) {
+  while (workers.length < n) workers.push({ job: null, t: 0, dur: 1, flash: 0, ok: true });
+  while (workers.length > n) {
+    const w = workers.pop();
+    if (w.job) { w.job.state = "queued"; queue.unshift(w.job); }
+  }
+  document.getElementById("wn").textContent = n;
+  layout();
+}
+
+function spawn(i) {
+  const p = producers[i];
+  const j = { id: nextId++, x: p.x, y: p.y, tx: p.x, ty: p.y, tries: 0, state: "queued" };
+  jobs.push(j); queue.push(j);
+}
+
+function place() {
+  const perRow = Math.max(1, Math.floor((L.qx1 - L.qx0) / L.slot) - 1);
+  queue.forEach((j, i) => {
+    const row = Math.floor(i / perRow), col = i % perRow;
+    j.tx = L.qx1 - L.slot * 0.9 - col * L.slot;
+    j.ty = L.qy + row * L.slot * 1.05;
+  });
+  deadLane.forEach((j, i) => {
+    j.tx = L.qx0 + L.slot * 0.7 + (i % perRow) * L.slot;
+    j.ty = L.dy + Math.floor(i / perRow) * L.slot * 1.05;
+  });
+}
+
+let spawnIn = 0;
+function step(dt) {
+  spawnIn -= dt;
+  if (spawnIn <= 0) { if (queue.length < 30) spawn(Math.floor(rng() * 3)); spawnIn = 0.16 + rng() * 0.24; }
+
+  for (const w of workers) {
+    if (!w.job && queue.length) {
+      const j = queue.shift();
+      w.job = j; w.t = 0; w.dur = 0.8 + rng() * 1.6;
+      j.state = "working"; j.tx = w.x - 30; j.ty = w.y;
+    }
+    if (w.job) {
+      w.t += dt;
+      if (w.t >= w.dur) {
+        const j = w.job;
+        const ok = rng() > 0.3;
+        if (ok) { j.state = "done"; j.tx = W + 60; stats.done++; }
+        else if (++j.tries >= 3) { j.state = "dead"; deadLane.push(j); stats.dead++; }
+        else { j.state = "queued"; queue.push(j); stats.retry++; }
+        w.job = null; w.flash = 1; w.ok = ok;
+      }
+    }
+    w.flash = Math.max(0, w.flash - dt * 2.2);
+  }
+
+  while (deadLane.length > 26) deadLane.shift().state = "gone";
+  place();
+
+  const k = 1 - Math.pow(0.0006, dt);   // frame-rate independent easing
+  for (const j of jobs) {
+    j.x += (j.tx - j.x) * k;
+    j.y += (j.ty - j.y) * k;
+    if (j.state === "done" && j.x > W + 20) j.state = "gone";
+  }
+  jobs = jobs.filter((j) => j.state !== "gone");
+}
+
+function text(s, x, y, color, font) { g.fillStyle = color; g.font = font; g.fillText(s, x, y); }
+function mono(s, x, y, color = "#6f706b") { text(s, x, y, color, '500 11px "Geist Mono", ui-monospace, monospace'); }
+function box(x, y, w, h, r) { g.beginPath(); g.roundRect(x, y, w, h, r); }
+
+function curve(x0, y0, x1, y1, color) {
+  g.beginPath(); g.moveTo(x0, y0);
+  const mx = (x0 + x1) / 2;
+  g.bezierCurveTo(mx, y0, mx, y1, x1, y1);
+  g.strokeStyle = color; g.lineWidth = 1; g.stroke();
+}
+
+function draw() {
+  g.clearRect(0, 0, W, H);
+
+  const laneTop = L.qy - L.slot * 0.95, laneH = L.slot * 3.4;
+  // wiring first, so everything else sits on top of it
+  producers.forEach((p) => curve(p.x + 22, p.y, L.qx0 - 12, L.qy + L.slot * 0.4, "rgba(92,165,154,.16)"));
+  workers.forEach((w) => curve(L.qx1 + 12, L.qy + L.slot * 0.4, w.x - 46, w.y, "rgba(92,165,154,.16)"));
+
+  box(L.qx0 - 12, laneTop, L.qx1 - L.qx0 + 24, laneH, 12);
+  g.fillStyle = "rgba(20,21,19,.72)"; g.fill(); g.strokeStyle = "#262724"; g.stroke();
+  mono("queue · jobs", L.qx0 - 12, laneTop - 12);
+  mono(`${queue.length} waiting`, L.qx1 - 60, laneTop - 12, "#a4a5a1");
+
+  const deadTop = L.dy - L.slot * 0.95;
+  box(L.qx0 - 12, deadTop, L.qx1 - L.qx0 + 24, L.slot * 2.4, 12);
+  g.setLineDash([4, 5]); g.strokeStyle = "rgba(229,72,77,.35)"; g.stroke(); g.setLineDash([]);
+  mono("dead-letter · 3 attempts", L.qx0 - 12, deadTop - 12, "rgba(229,72,77,.8)");
+
+  producers.forEach((p) => {
+    g.beginPath(); g.arc(p.x, p.y, 20, 0, Math.PI * 2);
+    g.fillStyle = "#121a18"; g.fill(); g.strokeStyle = "#2c5954"; g.stroke();
+    g.beginPath(); g.arc(p.x, p.y, 4, 0, Math.PI * 2); g.fillStyle = "#5ca59a"; g.fill();
+    mono(p.name, p.x - 18, p.y + 38);
+  });
+
+  workers.forEach((w, i) => {
+    const bx = w.x - 44, by = w.y - 27;
+    box(bx, by, 176, 54, 10);
+    g.fillStyle = "#121311"; g.fill();
+    const a = 0.35 + w.flash * 0.65;
+    g.strokeStyle = w.flash > 0.01 ? (w.ok ? `rgba(92,165,154,${a})` : `rgba(229,72,77,${a})`) : "#262724";
+    g.stroke();
+    const cx = bx + 26, p = w.job ? Math.min(1, w.t / w.dur) : 0;
+    g.lineWidth = 2.5;
+    g.beginPath(); g.arc(cx, w.y, 11, 0, Math.PI * 2); g.strokeStyle = "#232421"; g.stroke();
+    if (p > 0) { g.beginPath(); g.arc(cx, w.y, 11, -Math.PI / 2, -Math.PI / 2 + p * Math.PI * 2); g.strokeStyle = w.job && w.job.tries ? "#e8a33c" : "#5ca59a"; g.stroke(); }
+    g.lineWidth = 1;
+    text(`worker-${i + 1}`, bx + 48, w.y - 3, "#ecede9", "500 12px Geist, sans-serif");
+    mono(w.job ? `job #${w.job.id}${w.job.tries ? ` · retry ${w.job.tries}` : ""}` : "idle", bx + 48, w.y + 13);
+  });
+
+  for (const j of jobs) {
+    if (j.state === "working") continue;
+    const color = j.state === "dead" ? "#e5484d" : j.tries ? "#e8a33c" : j.state === "done" ? "#85c3b8" : "#5ca59a";
+    g.shadowColor = color; g.shadowBlur = 10;
+    box(j.x - 7, j.y - 5, 14, 10, 3); g.fillStyle = color; g.fill();
+    g.shadowBlur = 0;
+  }
+}
+
+let frame = 0;
+function hud() {
+  document.getElementById("done").textContent = stats.done;
+  document.getElementById("retry").textContent = stats.retry;
+  document.getElementById("dead").textContent = stats.dead;
+}
+
+let last = performance.now();
+function loop(now) {
+  const dt = Math.min(0.05, (now - last) / 1000);
+  last = now;
+  step(dt); draw();
+  if (++frame % 6 === 0) hud();
+  requestAnimationFrame(loop);
+}
+
+addEventListener("resize", resize);
+document.getElementById("burst").onclick = () => { for (let i = 0; i < 24; i++) spawn(i % 3); };
+document.getElementById("workers").oninput = (e) => setWorkers(+e.target.value);
+
+resize();
+setWorkers(4);
+for (let i = 0; i < 5; i++) spawn(i % 3);
+// Warm up off-screen, so the first frame already shows a queue under load.
+for (let i = 0; i < 60 * 22; i++) step(1 / 60);
+hud();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

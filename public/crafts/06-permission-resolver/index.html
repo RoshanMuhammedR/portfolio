@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>06 · Permission resolver — Crafts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root { --bg: #f9faf9; --panel: #ffffff; --soft: #f4f5f4; --line: #e6e6e5; --text: #1a1b18; --muted: #6a6b66; --faint: #a4a5a1;
+          --role: #428a80; --team: #c27b1a; --user: #7b61c9; --deny: #d64545; }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body { display: grid; place-items: center; background: var(--bg); color: var(--text); font-family: Geist, ui-sans-serif, system-ui, sans-serif; overflow: hidden; }
+  .meta { position: fixed; top: 24px; left: 28px; font: 500 12px/1.5 "Geist Mono", ui-monospace, monospace; color: var(--faint); }
+  .meta b { color: var(--muted); font-weight: 500; }
+  .app { display: grid; grid-template-columns: 230px minmax(0, 1fr) 290px; gap: 18px; width: min(1180px, 94vw); }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 1px 2px rgba(0,0,0,.03), 0 12px 40px -24px rgba(0,0,0,.18); }
+  .who { padding: 20px; }
+  .avatar { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; background: linear-gradient(135deg, #a9d7cd, #428a80); color: #fff; font: 600 15px Geist, sans-serif; }
+  .name { margin-top: 12px; font: 600 16px Geist, sans-serif; letter-spacing: -.01em; }
+  .team { margin-top: 3px; font: 400 13px Geist, sans-serif; color: var(--muted); }
+  h3 { margin: 22px 0 10px; font: 500 11px "Geist Mono", monospace; color: var(--faint); text-transform: uppercase; letter-spacing: .06em; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { all: unset; cursor: pointer; padding: 6px 10px; border: 1px solid var(--line); border-radius: 999px; font: 500 12px Geist, sans-serif; color: var(--muted); }
+  .chip[aria-pressed="true"] { background: var(--text); border-color: var(--text); color: #fff; }
+  .ovr { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-top: 1px solid var(--soft); font: 400 12px "Geist Mono", monospace; color: var(--muted); cursor: pointer; }
+  .ovr span:last-child { font-weight: 500; }
+  .grid { padding: 8px 8px 14px; }
+  table { width: 100%; border-collapse: separate; border-spacing: 0; }
+  th { padding: 12px 10px; font: 500 11px "Geist Mono", monospace; color: var(--faint); text-transform: uppercase; letter-spacing: .06em; text-align: center; }
+  th:first-child { text-align: left; }
+  td { padding: 6px; text-align: center; border-top: 1px solid var(--soft); }
+  td:first-child { padding-left: 12px; text-align: left; font: 500 14px Geist, sans-serif; }
+  .cell { all: unset; cursor: pointer; position: relative; display: inline-grid; place-items: center; width: 58px; height: 38px; border-radius: 9px; font: 600 14px Geist, sans-serif; transition: background .15s, box-shadow .15s; }
+  .cell.allow { color: var(--role); background: #eef6f4; }
+  .cell.deny { color: #c5c6c1; background: transparent; }
+  .cell.deny.explicit { color: var(--deny); background: #fbefef; }
+  .cell::after { content: ""; position: absolute; top: 6px; right: 6px; width: 6px; height: 6px; border-radius: 50%; background: var(--src, transparent); }
+  .cell[aria-selected="true"] { box-shadow: 0 0 0 2px var(--text); }
+  .legend { display: flex; gap: 16px; padding: 4px 12px 0; font: 400 12px Geist, sans-serif; color: var(--muted); }
+  .legend i { display: inline-block; width: 7px; height: 7px; margin-right: 6px; border-radius: 50%; }
+  .trace { padding: 20px; }
+  .q { font: 600 16px/1.35 Geist, sans-serif; letter-spacing: -.01em; }
+  .steps { list-style: none; margin: 18px 0 0; padding: 0; }
+  .step { position: relative; padding: 0 0 18px 26px; font: 400 13px/1.45 Geist, sans-serif; color: var(--muted); }
+  .step::before { content: ""; position: absolute; left: 5px; top: 5px; width: 9px; height: 9px; border-radius: 50%; border: 2px solid var(--c, var(--line)); background: #fff; }
+  .step::after { content: ""; position: absolute; left: 10px; top: 18px; bottom: 2px; width: 1px; background: var(--line); }
+  .step:last-child::after { display: none; }
+  .step b { display: block; font: 500 12px "Geist Mono", monospace; color: var(--text); }
+  .step.skip { opacity: .5; }
+  .verdict { margin-top: 4px; padding: 14px; border-radius: 10px; font: 600 15px Geist, sans-serif; }
+  .verdict.allow { background: #eef6f4; color: var(--role); } .verdict.deny { background: #fbefef; color: var(--deny); }
+</style>
+</head>
+<body>
+<div class="meta"><b>06</b> / Permission resolver — user override, then team policy, then role</div>
+<div class="app">
+  <aside class="card who">
+    <div class="avatar">PK</div>
+    <div class="name">Priya K.</div>
+    <div class="team">Growth team</div>
+    <h3>role</h3>
+    <div class="chips" id="roles"></div>
+    <h3>user overrides</h3>
+    <div id="overrides"></div>
+    <h3>team policy</h3>
+    <div class="ovr" style="cursor:default"><span>connections · run</span><span style="color:var(--team)">deny</span></div>
+    <div class="ovr" style="cursor:default"><span>audit log · view</span><span style="color:var(--team)">allow</span></div>
+  </aside>
+  <section class="card grid">
+    <table><thead><tr id="head"></tr></thead><tbody id="body"></tbody></table>
+    <div class="legend"><span><i style="background:var(--user)"></i>user override</span><span><i style="background:var(--team)"></i>team policy</span><span><i style="background:var(--role)"></i>role</span></div>
+  </section>
+  <aside class="card trace" aria-live="polite">
+    <h3 style="margin-top:0">resolution trace</h3>
+    <div class="q" id="q"></div>
+    <ol class="steps" id="steps"></ol>
+    <div class="verdict" id="verdict"></div>
+  </aside>
+</div>
+<script>
+const resources = ["Workflows", "Connections", "Billing", "Members", "Audit log"];
+const actions = ["view", "edit", "run", "delete"];
+const ROLES = {
+  Viewer: { view: true },
+  Editor: { view: true, edit: true, run: true },
+  Admin: { view: true, edit: true, run: true, delete: true },
+};
+// Some resources are stricter than the role's blanket grant.
+const ROLE_EXCEPTIONS = { "Billing:edit": "Admin", "Members:edit": "Admin", "Audit log:view": "Admin", "Billing:run": "never", "Members:run": "never", "Audit log:run": "never", "Audit log:edit": "never" };
+const TEAM = { "Connections:run": "deny", "Audit log:view": "allow" };
+const overrides = { "Workflows:delete": "allow", "Members:view": "none" };
+
+let role = "Editor";
+let selected = "Connections:run";
+
+function roleAllows(r, a) {
+  const rule = ROLE_EXCEPTIONS[`${r}:${a}`];
+  if (rule === "never") return { ok: false, why: `nothing can ${a} ${r.toLowerCase()}` };
+  if (rule && role !== "Admin") return { ok: false, why: `${r.toLowerCase()} · ${a} is admin-only` };
+  return ROLES[role][a] ? { ok: true, why: `${role} includes ${a}` } : { ok: false, why: `${role} does not include ${a}` };
+}
+
+function resolve(r, a) {
+  const key = `${r}:${a}`;
+  const steps = [];
+  const o = overrides[key];
+  if (o && o !== "none") { steps.push({ c: "var(--user)", b: `user override: ${o}`, t: "An explicit grant or block on this person wins outright." }); return { ok: o === "allow", src: "var(--user)", steps, explicit: true }; }
+  steps.push({ c: "var(--user)", b: "user override: none", t: "Nothing set for this person.", skip: true });
+  const t = TEAM[key];
+  if (t) { steps.push({ c: "var(--team)", b: `team policy: ${t}`, t: `Growth ${t === "deny" ? "blocks" : "grants"} ${a} on ${r.toLowerCase()} for everyone on the team.` }); return { ok: t === "allow", src: "var(--team)", steps, explicit: t === "deny" }; }
+  steps.push({ c: "var(--team)", b: "team policy: none", t: "The team has no rule here.", skip: true });
+  const rr = roleAllows(r, a);
+  steps.push({ c: "var(--role)", b: `role: ${rr.ok ? "allow" : "deny"}`, t: rr.why });
+  return { ok: rr.ok, src: rr.ok ? "var(--role)" : "transparent", steps, explicit: false };
+}
+
+function render() {
+  document.getElementById("roles").innerHTML = Object.keys(ROLES).map((r) => `<button class="chip" aria-pressed="${r === role}" data-role="${r}">${r}</button>`).join("");
+  document.getElementById("overrides").innerHTML = Object.entries(overrides).map(([k, v]) => `<div class="ovr" data-ovr="${k}"><span>${k.replace(":", " · ").toLowerCase()}</span><span style="color:${v === "allow" ? "var(--role)" : v === "deny" ? "var(--deny)" : "var(--faint)"}">${v}</span></div>`).join("");
+  document.getElementById("head").innerHTML = `<th>resource</th>${actions.map((a) => `<th>${a}</th>`).join("")}`;
+  document.getElementById("body").innerHTML = resources.map((r) => `<tr><td>${r}</td>${actions.map((a) => {
+    const v = resolve(r, a), key = `${r}:${a}`;
+    return `<td><button class="cell ${v.ok ? "allow" : "deny"} ${v.explicit ? "explicit" : ""}" style="--src:${v.src}" data-cell="${key}" aria-selected="${key === selected}" aria-label="${r} ${a}: ${v.ok ? "allowed" : "denied"}">${v.ok ? "✓" : "✕"}</button></td>`;
+  }).join("")}</tr>`).join("");
+  const [r, a] = selected.split(":"), v = resolve(r, a);
+  document.getElementById("q").textContent = `Can Priya ${a} ${r.toLowerCase()}?`;
+  document.getElementById("steps").innerHTML = v.steps.map((st) => `<li class="step ${st.skip ? "skip" : ""}" style="--c:${st.c}"><b>${st.b}</b>${st.t}</li>`).join("");
+  const verdict = document.getElementById("verdict");
+  verdict.className = `verdict ${v.ok ? "allow" : "deny"}`;
+  verdict.textContent = v.ok ? "Allowed" : "Denied";
+}
+
+document.addEventListener("click", (e) => {
+  const t = e.target.closest("[data-role],[data-cell],[data-ovr]");
+  if (!t) return;
+  if (t.dataset.role) role = t.dataset.role;
+  if (t.dataset.cell) selected = t.dataset.cell;
+  if (t.dataset.ovr) { const k = t.dataset.ovr; overrides[k] = { none: "allow", allow: "deny", deny: "none" }[overrides[k]]; selected = k; }
+  render();
+});
+render();
+</script>
+</body>
+</html>

@@ -53,14 +53,14 @@ export const projectsData: ProjectItem[] = [
     tagline: "Autonomous multi-source document ingestion & agentic query planning with chunk citation tracing.",
     liveUrl: "https://saga.dedyn.io/",
     repoUrl: "https://github.com/RoshanMuhammedR/KB-ULT",
-    description: "An agentic RAG knowledge base that answers from multi-format documents with deterministic chunk citations. Features autonomous query planning that decomposes complex prompts into targeted vector retrievals across PDFs, Markdown, YouTube transcripts, and GitHub repositories. Ingestion runs asynchronously on Celery workers over Redis, persisting embeddings to PostgreSQL with pgvector in a Next.js + FastAPI Turborepo.",
+    description: "An agentic RAG knowledge base that answers from multi-format documents with deterministic chunk citations. Features autonomous query planning that decomposes complex prompts into targeted vector retrievals across PDFs, Markdown, YouTube transcripts, and GitHub repositories. Ingestion runs asynchronously on Procrastinate workers, persisting embeddings to PostgreSQL with pgvector in a Next.js + FastAPI Turborepo.",
     architectureHighlights: [
       "Agentic query decomposition & multi-step citation routing",
       "Multi-source ingestion: PDFs, Markdown/text, YouTube transcripts, GitHub repos",
-      "Asynchronous Celery workers over Redis for non-blocking ingestion",
+      "Asynchronous Procrastinate workers for non-blocking ingestion",
       "PostgreSQL + pgvector HNSW similarity queries with chunk offset citations"
     ],
-    stack: ["Next.js", "FastAPI", "Python", "TypeScript", "PostgreSQL", "pgvector", "Celery", "Redis", "Turbo", "pnpm"],
+    stack: ["Next.js", "FastAPI", "Python", "TypeScript", "PostgreSQL", "pgvector", "Procrastinate", "Turbo", "pnpm"],
     diagramType: "rag-pipeline"
   },
   {
@@ -128,7 +128,7 @@ export const stackCategories: StackCategory[] = [
     skills: [
       { name: "TypeScript", highlight: true, useCase: "Strict typing, generics, AST" },
       { name: "JavaScript", highlight: false, useCase: "ESNext, asynchronous event loop" },
-      { name: "Python", highlight: true, useCase: "Data parsing, AI integrations, Celery" },
+      { name: "Python", highlight: true, useCase: "Data parsing, AI integrations, background workers" },
       { name: "SQL", highlight: true, useCase: "Complex joins, indexing strategies, pgvector" },
       { name: "Java", highlight: false, useCase: "OOP principles & system fundamentals" }
     ]

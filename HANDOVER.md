@@ -1,3 +1,10 @@
+> **Superseded — kept for reference only.**
+>
+> This describes the "Strip B" design (`StripB.html`), which was replaced in
+> September 2026 by the current five-page site. The components it refers to
+> (`components/strip/`, `lib/stripScene.ts`) no longer exist. Nothing here
+> describes the code as it stands; see [README.md](README.md) instead.
+
 # Strip B — handover brief
 
 `StripB.html` is the approved design, as one self-contained file. Open it in a
