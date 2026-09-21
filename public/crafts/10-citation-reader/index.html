@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>10 · Citation reader — Crafts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root { --bg: #0c0d0c; --line: #262724; --muted: #6f706b; --dim: #a4a5a1; --text: #ecede9; --teal: #5ca59a; --teal-2: #85c3b8; }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body { display: grid; place-items: center; background: radial-gradient(900px 600px at 30% 40%, #111916 0%, var(--bg) 70%); color: var(--text); font-family: Geist, ui-sans-serif, system-ui, sans-serif; overflow: hidden; }
+  .meta { position: fixed; top: 24px; left: 28px; font: 500 12px/1.5 "Geist Mono", ui-monospace, monospace; color: var(--muted); }
+  .meta b { color: var(--dim); font-weight: 500; }
+  .wrap { position: relative; display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 72px; width: min(1160px, 92vw); }
+  svg.links { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
+  .ask { font: 500 12px "Geist Mono", monospace; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+  .q { margin: 12px 0 26px; font: 600 26px/1.25 Geist, sans-serif; letter-spacing: -.025em; }
+  .answer p { margin: 0 0 16px; font: 400 17px/1.7 Geist, sans-serif; color: var(--dim); letter-spacing: -.005em; }
+  .answer p span.claim { color: var(--text); transition: background .2s; border-radius: 4px; }
+  .answer p span.claim.on { background: rgba(92,165,154,.16); }
+  .cite { all: unset; cursor: pointer; display: inline-grid; place-items: center; min-width: 20px; height: 20px; margin: 0 2px; padding: 0 5px; border-radius: 6px; background: #1e1f1c; border: 1px solid #2f302c; font: 500 11px "Geist Mono", monospace; color: var(--dim); vertical-align: 2px; transition: .15s; }
+  .cite.on { background: var(--teal); border-color: var(--teal); color: #0b1412; }
+  .tag { display: inline-flex; gap: 8px; align-items: center; margin-top: 10px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 999px; font: 500 11px "Geist Mono", monospace; color: var(--muted); }
+  .tag i { width: 6px; height: 6px; border-radius: 50%; background: var(--teal); }
+  .sources { display: grid; gap: 12px; align-content: center; }
+  .src { padding: 16px 18px; border: 1px solid var(--line); border-radius: 12px; background: rgba(19,20,18,.9); transition: border-color .2s, transform .35s cubic-bezier(.22,1,.36,1), opacity .2s; }
+  .src.on { border-color: var(--teal); transform: translateX(-6px); box-shadow: 0 16px 40px -24px rgba(92,165,154,.7); }
+  .src.dim { opacity: .45; }
+  .src .top { display: flex; justify-content: space-between; gap: 12px; font: 500 12px "Geist Mono", monospace; color: var(--dim); }
+  .src .top span:last-child { color: var(--muted); }
+  .src p { margin: 10px 0 0; font: 400 14px/1.55 Geist, sans-serif; color: var(--muted); }
+  .src mark { background: rgba(92,165,154,.18); color: var(--text); border-radius: 3px; padding: 0 2px; }
+  .n { display: inline-grid; place-items: center; width: 18px; height: 18px; margin-right: 8px; border-radius: 5px; background: #1e1f1c; font: 500 10px "Geist Mono", monospace; color: var(--dim); }
+  .src.on .n { background: var(--teal); color: #0b1412; }
+</style>
+</head>
+<body>
+<div class="meta"><b>10</b> / Citation reader — every claim points at the chunk it came from</div>
+<div class="wrap" id="wrap">
+  <svg class="links" id="links"></svg>
+  <section class="answer">
+    <div class="ask">question</div>
+    <div class="q">Why did ingestion fall behind during the upload spike?</div>
+    <p><span class="claim" data-c="1">The spike queued far more PDF parsing jobs than the workers could drain</span><button class="cite" data-c="1">1</button>, and <span class="claim" data-c="2">each worker handled one task at a time, so large files held small ones behind them</span><button class="cite" data-c="2">2</button>.</p>
+    <p><span class="claim" data-c="3">Splitting parsing and embedding onto separate queues kept embeddings flowing while PDFs were still being parsed</span><button class="cite" data-c="3">3</button>, which <span class="claim" data-c="4">the runbook now lists as the first thing to check</span><button class="cite" data-c="4">4</button>.</p>
+    <div class="tag"><i></i>sample corpus · 4 of 212 chunks cited</div>
+  </section>
+  <section class="sources" id="sources">
+    <article class="src" data-c="1"><div class="top"><span><span class="n">1</span>worker-metrics.csv</span><span>rows 88–131</span></div><p>queue depth climbed from 12 to 940 in forty minutes while <mark>completed parse jobs per minute stayed flat</mark>.</p></article>
+    <article class="src" data-c="2"><div class="top"><span><span class="n">2</span>celery-config.py</span><span>chunk 3</span></div><p><mark>worker_concurrency = 1</mark> — set during debugging so that stack traces stayed readable, and never reverted.</p></article>
+    <article class="src" data-c="3"><div class="top"><span><span class="n">3</span>incident-notes.md</span><span>§ fix</span></div><p>moved embedding to its own queue; <mark>parse backlog no longer delays chunks that are already parsed</mark>.</p></article>
+    <article class="src" data-c="4"><div class="top"><span><span class="n">4</span>ingest-runbook.md</span><span>§ slow ingestion</span></div><p><mark>first, compare queue depth per queue</mark> before scaling workers — a single hot queue hides behind the total.</p></article>
+  </section>
+</div>
+<script>
+let active = "2";
+function draw() {
+  const wrap = document.getElementById("wrap").getBoundingClientRect();
+  const chip = document.querySelector(`.cite[data-c="${active}"]`).getBoundingClientRect();
+  const card = document.querySelector(`.src[data-c="${active}"]`).getBoundingClientRect();
+  const x0 = chip.right - wrap.left + 4, y0 = chip.top + chip.height / 2 - wrap.top;
+  const x1 = card.left - wrap.left - 2, y1 = card.top + card.height / 2 - wrap.top;
+  const mx = (x0 + x1) / 2;
+  document.getElementById("links").innerHTML =
+    `<path d="M${x0},${y0} C${mx},${y0} ${mx},${y1} ${x1},${y1}" fill="none" stroke="#5ca59a" stroke-width="1.5" stroke-dasharray="4 5"/>` +
+    `<circle cx="${x0}" cy="${y0}" r="3" fill="#5ca59a"/><circle cx="${x1}" cy="${y1}" r="3" fill="#5ca59a"/>`;
+}
+function set(c) {
+  active = c;
+  document.querySelectorAll("[data-c]").forEach((el) => {
+    const on = el.dataset.c === c;
+    el.classList.toggle("on", on);
+    if (el.classList.contains("src")) el.classList.toggle("dim", !on);
+  });
+  requestAnimationFrame(draw);
+}
+document.addEventListener("pointerover", (e) => { const t = e.target.closest(".cite,.claim,.src"); if (t) set(t.dataset.c); });
+addEventListener("resize", draw);
+document.fonts.ready.then(() => set(active));
+set(active);
+</script>
+</body>
+</html>

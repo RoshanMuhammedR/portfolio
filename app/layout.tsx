@@ -1,33 +1,32 @@
 import type { Metadata, Viewport } from "next";
-import { JetBrains_Mono, Plus_Jakarta_Sans } from "next/font/google";
+import { Geist, Geist_Mono } from "next/font/google";
 import { identityData } from "@/content/portfolioData";
+import { AppShell } from "@/components/shell/AppShell";
 import "./globals.css";
 
-/** Product voice: everything that is not code is set in Jakarta. */
-const jakarta = Plus_Jakarta_Sans({
-  variable: "--font-jakarta",
+/** One family carries the whole page; weight and tracking do the rest. */
+const geist = Geist({
+  variable: "--font-geist",
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700", "800"],
   display: "swap",
 });
 
-/** The blueprint voice: labels, metrics, file paths, snippets. */
-const jetbrainsMono = JetBrains_Mono({
-  variable: "--font-jetbrains-mono",
+/** Metadata only - labels, dates, tags. */
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
-  style: ["normal", "italic"],
+  weight: ["400", "500"],
   display: "swap",
 });
 
 const description =
-  "Portfolio of Roshan Muhammed R, Full-stack engineer specializing in Next.js, React, NestJS, FastAPI, PostgreSQL, Redis, and high-performance distributed systems.";
+  "Portfolio of Roshan Muhammed R, a full-stack engineer building product surfaces in Next.js and React, APIs in NestJS and FastAPI, and the PostgreSQL, Redis and queue layers underneath.";
 
-const title = `${identityData.name} - Full-Stack Engineer Portfolio`;
+const title = `${identityData.name} - Full-stack engineer`;
 
 export const metadata: Metadata = {
   metadataBase: new URL(identityData.liveSiteUrl),
-  title,
+  title: { default: title, template: `%s, ${identityData.name}` },
   description,
   keywords: [
     "Roshan Muhammed",
@@ -50,28 +49,21 @@ export const metadata: Metadata = {
     description,
     locale: "en_US",
   },
-  twitter: {
-    card: "summary_large_image",
-    title,
-    description,
-  },
+  twitter: { card: "summary_large_image", title, description },
   robots: { index: true, follow: true },
 };
 
 export const viewport: Viewport = {
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#ECEEE9" },
-    { media: "(prefers-color-scheme: dark)", color: "#16181C" },
-  ],
+  themeColor: "#f9faf9",
 };
 
 /**
- * Resolves the theme before the first paint, so the page never shows the wrong
- * plate for a frame. It runs blocking and ahead of the body on purpose: this is
- * the one thing that cannot wait for hydration. Kept to a single expression and
- * wrapped in a try so a locked-down localStorage cannot break rendering.
+ * Applies a stored dark-theme choice before the first paint, so a reader who
+ * chose dark never sees a flash of the light page. Light is the default, as on
+ * the reference. Wrapped in a try so a locked-down localStorage cannot break
+ * rendering.
  */
-const themeBootstrap = `try{var t=localStorage.getItem("theme");if(t!=="light"&&t!=="dark"){t=matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"}document.documentElement.dataset.theme=t}catch(e){document.documentElement.dataset.theme="light"}`;
+const themeBootstrap = `try{if(localStorage.getItem("theme")==="dark"){document.documentElement.dataset.theme="dark"}}catch(e){}`;
 
 export default function RootLayout({
   children,
@@ -79,20 +71,20 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${jakarta.variable} ${jetbrainsMono.variable} scroll-smooth`}
+      className={`${geist.variable} ${geistMono.variable}`}
       suppressHydrationWarning
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeBootstrap }} />
       </head>
-      <body className="min-h-screen bg-paper text-ink antialiased">
+      <body className="min-h-dvh bg-n50 font-sans text-n900 antialiased">
         <a
           href="#main"
-          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-ink focus:px-5 focus:py-3 focus:text-sm focus:font-bold focus:text-on-ink"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-10 focus:top-10 focus:z-[60] focus:rounded-lg focus:bg-n900 focus:px-5 focus:py-3 focus:text-[14px] focus:font-medium focus:text-n50"
         >
           Skip to content
         </a>
-        {children}
+        <AppShell>{children}</AppShell>
       </body>
     </html>
   );

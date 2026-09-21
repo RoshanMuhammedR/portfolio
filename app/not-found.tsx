@@ -1,27 +1,33 @@
 import Link from "next/link";
+import { SplitPage } from "@/components/shell/SplitPage";
+import { navItems } from "@/content/site";
 
 export default function NotFound() {
   return (
-    <main className="bg-plate flex min-h-screen items-center justify-center px-6">
-      <div className="w-full max-w-lg border border-rule bg-card p-8">
-        <p className="font-mono text-[11px] font-bold uppercase tracking-[0.18em] text-ink-muted">
-          404 &middot; Route not found
-        </p>
-        <h1 className="mt-3 text-3xl font-bold tracking-tight text-ink">
-          This path is not wired up.
-        </h1>
-        <p className="mt-3 text-sm leading-relaxed text-ink-muted">
-          The link is out of date, or the page it pointed at was renamed. Everything lives on the
-          single canvas at the root.
-        </p>
-        <Link
-          href="/"
-          className="mt-7 inline-flex items-center gap-2 rounded-full bg-ink px-5 py-3 font-mono text-xs font-bold uppercase tracking-wider text-on-ink transition-colors hover:bg-ink-hover"
-        >
-          <span aria-hidden="true">&larr;</span>
-          <span>Back to the portfolio</span>
-        </Link>
-      </div>
-    </main>
+    <SplitPage
+      copy={
+        <>
+          <span className="block text-[14px] tracking-[-0.01em] text-n500">[ / 404 ]</span>
+          <h1 className="mt-[19px] text-[20px] font-semibold leading-[26px] tracking-[-0.02em] text-n900">
+            This path is not wired up.
+          </h1>
+          <p className="mt-2 text-[14px] leading-[22px] tracking-[-0.01em] text-n500">
+            The link is out of date, or the page it pointed at was renamed.
+          </p>
+          <ul className="mt-8 flex flex-col gap-[7px]">
+            {navItems.map((item) => (
+              <li key={item.href}>
+                <Link
+                  href={item.href}
+                  className="text-[14px] font-medium leading-[21px] tracking-[-0.01em] text-n500 transition-colors duration-[120ms] hover:text-n900"
+                >
+                  {item.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </>
+      }
+    />
   );
 }
