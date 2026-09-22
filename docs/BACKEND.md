@@ -97,16 +97,29 @@ fallback, and the studio tab that needs it says which file to run.
 
 ### Turn on email sign-in
 
-1. **Authentication** → **Sign In / Providers**.
-2. Make sure **Email** is enabled.
-3. Turn **Confirm email** on. Leave passwords off — the studio signs in with a
-   magic link, so there is no password to steal.
-4. **Authentication** → **URL Configuration** → add these to **Redirect URLs**:
-   - `http://localhost:3000/studio`
-   - `https://<your-domain>/studio`
+The studio signs in with a one-time code emailed to the owner. There is no
+password to steal, and unlike a link, a code can't be used up by a mail
+scanner, voided by a newer email you didn't open, or opened on the wrong
+device.
 
-Without the redirect URLs the sign-in link lands on the home page; the site
-forwards it to `/studio`, but adding them avoids the extra hop.
+1. **Authentication** → **Sign In / Providers**: make sure **Email** is enabled
+   and **Confirm email** is on.
+2. **Authentication** → **Emails** → **Magic link**: put the code in the email.
+   Subject `Your studio sign-in code`, and this body:
+
+   ```html
+   <h2>Your studio sign-in code</h2>
+   <p style="font-size:28px;font-weight:600;letter-spacing:6px">{{ .Token }}</p>
+   <p>Type it into the studio. It works once, within an hour, and only the
+   newest code counts. If you didn't ask for it, ignore this email.</p>
+   ```
+
+3. **Authentication** → **Users** → **Add user** → **Create new user**: your
+   email, any long password (nothing ever asks for it), and **Auto Confirm
+   User** ticked. The studio never creates accounts, so this is the only way
+   in.
+4. **Authentication** → **Sign In / Providers**: turn off **Allow new users to
+   sign up**.
 
 ### Copy the keys
 
@@ -150,8 +163,8 @@ npm run dev
 
 Go to `http://localhost:3000/studio`.
 
-1. Enter your email, press **Send sign-in link**.
-2. Open the link from your inbox. It brings you back to the studio, signed in.
+1. Enter your email, press **Email me a code**.
+2. Type the code from your inbox and press **Sign in**.
 
 | Tab | What you edit |
 |---|---|
@@ -176,12 +189,13 @@ within a minute.
 - Keep textures at 1024px or less (WebP), and compress models first:
   `npx @gltf-transform/cli optimize in.glb out.glb --compress meshopt`.
 
-### If someone else signs in
+### If someone else tries to sign in
 
-They can. Supabase will happily issue them a session. They will then be able to
-edit exactly nothing — every read of unpublished content comes back empty and
-every write, to the tables or to the bucket, is rejected by the database. The
-email check lives in Postgres, not in the page.
+The studio never creates accounts, and with sign-ups off nobody else can make
+one, so a stranger's address gets no code at all. A session would not help them
+anyway: every read of unpublished content comes back empty and every write, to
+the tables or to the bucket, is rejected by the database. The email check lives
+in Postgres, not in the page.
 
 ---
 
@@ -190,7 +204,7 @@ email check lives in Postgres, not in the page.
 Add the same variables in your host's dashboard. On Vercel: **Project** →
 **Settings** → **Environment Variables**, for Production *and* Preview.
 
-Then add your live URL to Supabase's **Redirect URLs** as described above.
+Nothing changes in Supabase: a code works on any address the site runs on.
 
 ---
 
@@ -212,8 +226,25 @@ signed in with an address other than the one in `public.is_site_owner()`.
 0003, or the image URL is `http://` (only `https://` and site-relative images
 are allowed in posts).
 
-**Sign-in link opens the wrong site** — the URL is missing from Supabase's
-Redirect URLs.
+**The sign-in email has a link but no code** — the **Magic link** template is
+still Supabase's default. See step 2 of *Turn on email sign-in*.
+
+**"Email link is invalid or has expired"** — the link was used already, is over
+an hour old, or a newer email replaced it (some mail scanners open links before
+you do). Switch the email to a code, as above, and use the newest email.
+
+**"Your account was never confirmed"** when asking for a code — the owner
+account exists but never finished signing up, and sign-ups are off. Run this
+in the SQL editor, then ask for a new code:
+
+```sql
+update auth.users
+set email_confirmed_at = coalesce(email_confirmed_at, now())
+where email = 'roshanmuhammed50@gmail.com';
+```
+
+**"Only the site owner's address can sign in here"** — that address has no
+account. Create it (step 3 of *Turn on email sign-in*).
 
 **Changes save but the public page does not change** — the row is not
 published, or you are inside the 60-second revalidation window.

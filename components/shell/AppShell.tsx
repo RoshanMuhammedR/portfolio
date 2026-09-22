@@ -37,9 +37,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     [pathname],
   );
 
-  // A Supabase magic link lands on the project's Site URL - the root - unless
-  // /studio is on its redirect allow-list. Only the studio reads the tokens, so
-  // forward them there instead of letting the home page drop them.
+  // A Supabase email link sent from the dashboard, or from an address Supabase
+  // does not recognise, lands on the project's Site URL - the root. Only the
+  // studio reads what it carries (a session or an error), so forward it there
+  // instead of letting the home page drop it.
   useEffect(() => {
     if (pathname.startsWith("/studio")) return;
     const { hash, search } = window.location;
