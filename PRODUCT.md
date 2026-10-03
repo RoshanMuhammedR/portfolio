@@ -36,7 +36,7 @@ Full-stack in the literal sense rather than the résumé sense — product surfa
 - Working contact form: `POST /api/contact` → Resend, with a honeypot field and toast feedback via `sonner`. Environment keys already provisioned.
 - Content lives in typed modules under `content/` (`site.ts`, `work.ts`, `skills.ts`, `education.ts`) and is the single source of truth for the page.
 - **Scope decision (this session):** the `/work/[slug]` case-study route is removed at the user's explicit instruction. The portfolio becomes a single page. Case-study depth that is worth keeping moves onto that page rather than being deleted with the route.
-- Deployed on Vercel at `https://portfolio-frontend-teal-ten.vercel.app`.
+- Deployed on Vercel at `https://roshan-weld.vercel.app`.
 
 ## Brand Commitments
 

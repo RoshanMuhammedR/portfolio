@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>07 · Upload and ingest — Crafts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f8f9fa; --card: #fff; --muted: #f1f3f4; --strong: #e8eaed; --ink: #1f1f1f; --mf: #5f6368; --ms: #9aa0a6;
+    --p: #f6552c; --pa: #e0431b; --psoft: #fff2ed; --border: #dadce0; --bsoft: #e8eaed; --bstrong: #c7cacf; --danger: #c82f5d; --ok: #148662;
+    --reading: #98b9dd; --queued: #ddaf9a; --splitting: #b8a6dc; --indexing: #a3caa3; --ready: #b9843e; --amber: #e58d1a; --violet: #8a65dc;
+    --t: 150ms cubic-bezier(.4, 0, .2, 1);
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html, body { height: 100%; margin: 0; }
+  body { background: var(--bg); color: var(--ink); font: 15px/1.5 "Plus Jakarta Sans", system-ui, sans-serif; }
+  button, input, textarea { font: inherit; color: inherit; }
+  button { cursor: pointer; background: none; border: 0; padding: 0; }
+  button:disabled { cursor: not-allowed; opacity: .5; }
+  svg.i { width: 1em; height: 1em; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+  :focus-visible { outline: 2px solid var(--p); outline-offset: 2px; }
+  .caps { font-size: 11px; line-height: 1.4; letter-spacing: .08em; font-weight: 600; text-transform: uppercase; color: var(--mf); }
+
+  .page { max-width: 760px; margin: 0 auto; padding: 32px 24px; }
+  .phead { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; margin-bottom: 20px; }
+  .phead h1 { margin: 0; font-size: 22px; line-height: 1.3; font-weight: 600; }
+  .phead p { margin: 2px 0 0; font-size: 12px; color: var(--mf); }
+  .btn { display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 14px; border-radius: 8px; background: var(--p); color: #fff; font-size: 13px; font-weight: 500; transition: background var(--t); }
+  .btn:hover:not(:disabled) { background: var(--pa); }
+  .btn2 { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--card); font-size: 13px; font-weight: 500; transition: background var(--t); }
+  .btn2:hover:not(:disabled) { background: var(--muted); }
+  .rows { display: flex; flex-direction: column; gap: 12px; }
+  .row { border: 1px solid var(--bsoft); border-radius: 8px; background: var(--card); padding: 16px; display: flex; gap: 14px; }
+  .tile { width: 36px; height: 36px; border-radius: 6px; display: grid; place-items: center; font-size: 18px; flex-shrink: 0; }
+  .tile svg { stroke-width: 1.75; }
+  .t-pdf { background: rgb(152 185 221 / .25); color: #4d79a8; } .t-youtube { background: rgb(221 175 154 / .3); color: #9a5c40; } .t-markdown { background: rgb(163 202 163 / .3); color: #4c7a4c; } .t-pptx { background: rgb(184 166 220 / .3); color: #6a55a0; } .t-audio { background: rgb(185 132 62 / .25); color: #8a5f24; }
+  .row .main { flex: 1; min-width: 0; }
+  .row .top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+  .row h3 { margin: 0; font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .row .meta { font-size: 13px; color: var(--mf); }
+  .badge { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; border: 1px solid var(--border); background: var(--card); padding: 4px 10px; font-size: 12px; font-weight: 500; white-space: nowrap; }
+  .badge .dot { width: 6px; height: 6px; border-radius: 50%; }
+  .badge.failed { border-color: rgb(200 47 93 / .4); color: var(--danger); }
+  .pulse { animation: pulse 2s cubic-bezier(.4, 0, .6, 1) infinite; }
+  @keyframes pulse { 50% { opacity: .5 } }
+  .bar { height: 6px; border-radius: 999px; background: var(--muted); overflow: hidden; margin-top: 12px; }
+  .bar > div { height: 100%; border-radius: 999px; background: var(--p); transition: width 700ms cubic-bezier(.4, 0, .2, 1); }
+  .hint { margin: 6px 0 0; font-size: 12px; color: var(--mf); }
+  .fail { margin-top: 12px; border-radius: 6px; border: 1px solid rgb(200 47 93 / .4); background: rgb(200 47 93 / .05); padding: 12px; font-size: 13px; }
+  .fail p { margin: 0 0 4px; } .fail .rec { color: var(--mf); margin-bottom: 10px; }
+  .fail .acts { display: flex; gap: 8px; }
+  .empty0 { margin-top: 12px; border: 1px dashed var(--bstrong); border-radius: 6px; padding: 12px; font-size: 13px; color: var(--mf); }
+
+  /* modal */
+  .scrim { position: fixed; inset: 0; z-index: 10; background: rgb(31 31 31 / .3); backdrop-filter: blur(2px); display: grid; place-items: center; padding: 16px; }
+  .dialog { width: 100%; max-width: 576px; max-height: 92dvh; display: flex; flex-direction: column; border-radius: 16px; border: 1px solid var(--border); background: var(--card); box-shadow: 0 25px 50px -12px rgb(0 0 0 / .25); overflow: hidden; }
+  .dhead, .dfoot { background: var(--bg); padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .dhead { border-bottom: 1px solid var(--bsoft); } .dfoot { border-top: 1px solid var(--bsoft); justify-content: flex-end; }
+  .dhead h2 { margin: 0; font-size: 14px; font-weight: 600; }
+  .dhead p { margin: 0; font-size: 11px; color: var(--mf); }
+  .x { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; color: var(--mf); font-size: 16px; }
+  .x:hover { background: var(--muted); color: var(--ink); }
+  .dbody { padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 24px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .bchip { display: flex; align-items: center; gap: 6px; border-radius: 999px; border: 1px solid var(--border); padding: 4px 10px 4px 4px; font-size: 12px; font-weight: 500; color: var(--mf); transition: all var(--t); }
+  .bchip:hover { background: var(--muted); }
+  .bchip[aria-pressed="true"] { border-color: var(--p); background: var(--psoft); color: var(--p); }
+  .bchip .in { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; color: #fff; font-size: 10px; font-weight: 700; }
+  .types { display: grid; gap: 8px; margin-top: 8px; }
+  @media (min-width: 640px) { .types { grid-template-columns: 1fr 1fr; } }
+  .type { display: flex; gap: 12px; text-align: left; border: 1px solid var(--border); border-radius: 12px; padding: 12px; transition: all var(--t); }
+  .type:hover { border-color: var(--bstrong); }
+  .type[aria-pressed="true"] { border-color: var(--p); background: rgb(255 242 237 / .4); }
+  .type .tile { width: 32px; height: 32px; font-size: 16px; }
+  .type b { display: block; font-size: 13px; font-weight: 600; }
+  .type span { display: block; font-size: 11px; color: var(--mf); }
+  .type small { display: block; margin-top: 4px; font-size: 11px; color: var(--ms); }
+  .more { border: 1px dashed var(--border); border-radius: 12px; padding: 12px; font-size: 11px; color: var(--mf); display: flex; align-items: center; }
+  .drop { border-radius: 12px; border: 1px dashed var(--bstrong); background: var(--bg); padding: 32px; text-align: center; transition: all var(--t); }
+  .drop.dragging { border-color: var(--p); background: rgb(255 242 237 / .4); }
+  .drop svg { font-size: 20px; color: var(--mf); }
+  .drop p { margin: 12px 0 0; font-size: 14px; font-weight: 500; }
+  .drop small { display: block; margin: 4px 0 14px; font-size: 11px; color: var(--mf); }
+  .field { width: 100%; border: 1px solid var(--border); border-radius: 8px; background: var(--card); padding: 8px 12px; font-size: 13px; outline: none; }
+  .field:focus { border-color: var(--p); }
+  textarea.field { font: 13px/1.5 "JetBrains Mono", monospace; resize: vertical; margin-top: 8px; }
+  .err { border-radius: 6px; border: 1px solid rgb(200 47 93 / .4); background: rgb(200 47 93 / .05); padding: 12px; font-size: 13px; white-space: pre-line; color: var(--danger); }
+  .foot { padding: 16px 24px; font-size: 11px; color: var(--ms); text-align: center; }
+  @media (prefers-reduced-motion: reduce) { .pulse { animation: none; } .bar > div { transition: none; } }
+</style>
+</head>
+<body>
+<main class="page">
+  <div class="phead">
+    <div><h1>Document library</h1><p>Craft 07 · rebuilt from Saga · sample data — nothing is uploaded or read</p></div>
+    <button class="btn" id="open">+ Add source</button>
+  </div>
+  <div class="rows" id="rows"></div>
+</main>
+<p class="foot">One file in each session fails on purpose, so “Retry without re-uploading” can be tried.</p>
+<div id="modal"></div>
+<input type="file" id="picker" multiple hidden>
+
+<script>
+const ICON = {
+  pdf: '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/>',
+  pptx: '<path d="M2 3h20"/><path d="M21 3v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V3"/><path d="m7 21 5-5 5 5"/>',
+  audio: '<path d="M2 10v3"/><path d="M6 6v11"/><path d="M10 3v18"/><path d="M14 8v7"/><path d="M18 5v13"/><path d="M22 10v3"/>',
+  markdown: '<rect width="8" height="4" x="8" y="2" rx="1"/><path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-.5"/><path d="M16 4h2a2 2 0 0 1 1.73 1"/><path d="M8 18h1"/><path d="M21.38 12.63a1 1 0 0 0-3-3l-5 5a2 2 0 0 0-.51.86l-.84 2.87a.5.5 0 0 0 .62.62l2.87-.84a2 2 0 0 0 .86-.51z"/>',
+  youtube: '<path d="M9 17H7A5 5 0 0 1 7 7h2"/><path d="M15 7h2a5 5 0 1 1 0 10h-2"/><line x1="8" x2="16" y1="12" y2="12"/>',
+  upload: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/>',
+  x: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>'
+};
+const icon = (k) => `<svg class="i" viewBox="0 0 24 24" aria-hidden="true">${ICON[k]}</svg>`;
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+
+/* ---- the real copy ---- */
+const TYPES = [
+  { type: "pdf", label: "PDF", how: "Upload a file", note: "Needs a text layer, not a scan" },
+  { type: "pptx", label: "Slides", how: "Upload a deck", note: "Slide text and speaker notes" },
+  { type: "audio", label: "Audio", how: "Upload a recording", note: "Transcribed — takes a few minutes" },
+  { type: "markdown", label: "Markdown", how: "Upload or paste", note: "Give pasted text a title" },
+  { type: "youtube", label: "Video", how: "Paste a link", note: "Needs transcripts enabled" }
+];
+const STATUS = {
+  pending: { label: "Waiting to start", hint: "In line — starting shortly.", tone: "pending", pct: 5 },
+  queued: { label: "Waiting to start", hint: "In line — starting shortly.", tone: "pending", pct: 8 },
+  extracting: { label: "Reading the file", hint: "Pulling the text out.", tone: "active", pct: 35 },
+  chunking: { label: "Breaking into passages", hint: "Splitting it into quotable pieces.", tone: "active", pct: 62 },
+  embedding: { label: "Making it searchable", hint: "Almost done — indexing passages.", tone: "active", pct: 88 },
+  ready: { label: "Ready to use", hint: "Answers can cite this source.", tone: "ready", pct: 100 },
+  failed: { label: "Couldn't be added", hint: "", tone: "failed", pct: 0 }
+};
+const DOT = { pending: "var(--ms)", active: "var(--reading)", ready: "var(--ok)", failed: "var(--danger)" };
+const RECOVERY = {
+  pdf: "Try a version with selectable text, or run it through OCR first.",
+  youtube: "This video may have transcripts disabled. Try one with captions.",
+  audio: "Check the recording has audible speech, then try again."
+};
+
+/* ---- sample data (made up) ---- */
+const BASES = [{ id: "b1", name: "Onboarding", colour: "amber" }, { id: "b2", name: "Q3 research", colour: "violet" }];
+const SCRIPT = { default: ["queued", "extracting", "chunking", "embedding", "ready"], failOnce: ["queued", "extracting", "failed"] };
+const PASSAGES_ON_READY = 42;
+let rows = [{ id: "s0", title: "Team handbook 2026", filename: "team-handbook-2026.pdf", source_type: "pdf", base: "b1", status: "ready", passage_count: 118 }];
+let failUsed = false;
+
+/* ---- the poller: every 2000 ms, advance each row along its script ---- */
+setInterval(() => {
+  let changed = false;
+  for (const r of rows) {
+    if (!r.script || r.status === "ready" || r.status === "failed") continue;
+    r.step++; r.status = r.script[r.step]; changed = true;
+    if (r.status === "ready") r.passage_count = PASSAGES_ON_READY;
+    if (r.status === "failed") r.error = r.source_type === "pdf" ? "This PDF has no text layer to read." : "Nothing could be read from this source.";
+  }
+  if (changed) renderRows();
+}, 2000);
+
+/* Stand-in for api.uploadFile: resolves after ~300 ms, never reads the file. */
+const uploadFile = (file, type, base) => new Promise((res, rej) => setTimeout(() => {
+  if (file.size === 0) return rej(new Error("the file is empty"));
+  const script = failUsed ? SCRIPT.default : ((failUsed = true), SCRIPT.failOnce);
+  res({ id: "s" + Math.random().toString(36).slice(2, 8), title: file.title ?? file.name.replace(/\.[^.]+$/, ""), filename: file.name, source_type: type, base, status: "queued", script, step: 0 });
+}, 300));
+
+function renderRows() {
+  document.getElementById("rows").innerHTML = rows.map((r) => {
+    const st = STATUS[r.status], base = BASES.find((b) => b.id === r.base);
+    const type = TYPES.find((t) => t.type === r.source_type);
+    const working = r.status !== "ready" && r.status !== "failed";
+    let hint = st.hint + (r.source_type === "audio" && working ? " Recordings take a few minutes." : "");
+    return `<div class="row">
+      <span class="tile t-${r.source_type}">${icon(r.source_type)}</span>
+      <div class="main">
+        <div class="top"><div style="min-width:0"><h3>${esc(r.title)}</h3><div class="meta">${type.label} · ${esc(r.filename)} · ${base.name}${r.status === "ready" ? ` · ${r.passage_count} passages` : ""}</div></div>
+          <span class="badge ${st.tone === "failed" ? "failed" : ""}"><span class="dot ${st.tone === "active" ? "pulse" : ""}" style="background:${DOT[st.tone]}"></span>${st.label}</span></div>
+        ${working ? `<div class="bar" role="progressbar" aria-valuenow="${st.pct}" aria-valuemin="0" aria-valuemax="100" aria-label="${st.label}"><div style="width:${st.pct}%"></div></div><p class="hint">${hint}</p>` : ""}
+        ${r.status === "failed" ? `<div class="fail" role="alert"><p>${esc(r.error)}</p>${RECOVERY[r.source_type] ? `<p class="rec">${RECOVERY[r.source_type]}</p>` : ""}<div class="acts"><button class="btn2" data-retry="${r.id}">Retry without re-uploading</button><button class="btn2" data-remove="${r.id}">Remove</button></div></div>` : ""}
+        ${r.status === "ready" && r.passage_count === 0 ? `<div class="empty0">Added, but nothing searchable came out of it.</div>` : ""}
+      </div></div>`;
+  }).join("");
+}
+document.getElementById("rows").addEventListener("click", (e) => {
+  const b = e.target.closest("button"); if (!b) return;
+  if (b.dataset.retry) { const r = rows.find((x) => x.id === b.dataset.retry); Object.assign(r, { status: "queued", script: SCRIPT.default, step: 0, error: null }); renderRows(); }
+  if (b.dataset.remove) { rows = rows.filter((x) => x.id !== b.dataset.remove); renderRows(); }
+});
+
+/* ---- the dialog ---- */
+let open = false, chosen = null, target = "b1", busy = false, error = null, dragging = false, url = "", noteTitle = "", noteBody = "", opener = null;
+const modal = document.getElementById("modal"), picker = document.getElementById("picker");
+
+function renderModal() {
+  if (!open) { modal.innerHTML = ""; return; }
+  const option = TYPES.find((t) => t.type === chosen);
+  const canSubmit = chosen && !busy && (chosen !== "youtube" || url.trim());
+  modal.innerHTML = `<div class="scrim" id="scrim"><div class="dialog" role="dialog" aria-modal="true" aria-labelledby="dtitle">
+    <div class="dhead"><div><h2 id="dtitle">Add a source</h2><p>Adding is instant. Making it searchable takes a moment — you can keep working.</p></div><button class="x" data-close aria-label="Close">${icon("x")}</button></div>
+    <div class="dbody">
+      <div><span class="caps">Add it to</span><div class="chips">${BASES.map((b) => `<button class="bchip" data-base="${b.id}" aria-pressed="${b.id === target}"><span class="in" style="background:var(--${b.colour})">${b.name[0]}</span>${b.name}</button>`).join("")}</div></div>
+      <div><span class="caps">Choose a type</span><div class="types">${TYPES.map((t) => `<button class="type" data-type="${t.type}" aria-pressed="${t.type === chosen}"><span class="tile t-${t.type}">${icon(t.type)}</span><span><b>${t.label}</b><span>${t.how}</span><small>${t.note}</small></span></button>`).join("")}<div class="more">More types are added over time — the list isn't fixed.</div></div></div>
+      ${chosen === "markdown" ? `<div><input class="field" id="ntitle" placeholder="Title for this note" aria-label="Title for pasted Markdown" value="${esc(noteTitle)}"><textarea class="field" id="nbody" rows="5" aria-label="Paste Markdown" placeholder="# Meeting notes&#10;Paste Markdown here…">${esc(noteBody)}</textarea></div>` : ""}
+      ${chosen === "youtube" ? `<input class="field" id="url" placeholder="https://youtube.com/watch?v=…" aria-label="YouTube link" value="${esc(url)}">` : ""}
+      ${chosen && chosen !== "youtube" ? `<div class="drop${dragging ? " dragging" : ""}" id="drop">${icon("upload")}<p>Drop your file here, or choose one</p><small>You can add several at once. Each is prepared independently.</small><button class="btn2" data-choose ${busy ? "disabled" : ""}>${busy ? "Adding…" : "Choose file"}</button></div>` : ""}
+      ${error ? `<div class="err" role="alert">${esc(error)}</div>` : ""}
+    </div>
+    <div class="dfoot"><button class="btn2" data-close ${busy ? "disabled" : ""}>Cancel</button><button class="btn" data-submit ${canSubmit ? "" : "disabled"}>${busy ? "Adding…" : "Add source"}</button></div>
+  </div></div>`;
+  for (const id of ["ntitle", "nbody", "url"]) {
+    const el = document.getElementById(id); if (!el) continue;
+    el.oninput = () => { if (id === "ntitle") noteTitle = el.value; if (id === "nbody") noteBody = el.value; if (id === "url") { url = el.value; modal.querySelector("[data-submit]").disabled = !url.trim(); } };
+  }
+  const drop = document.getElementById("drop");
+  if (drop) {
+    drop.ondragover = (e) => { e.preventDefault(); if (!dragging) { dragging = true; drop.classList.add("dragging"); } };
+    drop.ondragleave = () => { dragging = false; drop.classList.remove("dragging"); };
+    drop.ondrop = (e) => { e.preventDefault(); dragging = false; drop.classList.remove("dragging"); uploadFiles([...e.dataTransfer.files]); };
+  }
+}
+function setOpen(v) {
+  open = v;
+  if (v) { opener = document.activeElement; chosen = null; error = null; busy = false; url = noteTitle = noteBody = ""; }
+  renderModal();
+  if (v) modal.querySelector(".bchip")?.focus(); else opener?.focus(); // focus is restored on close
+}
+const dismiss = () => { if (!busy) setOpen(false); }; // dismissable={!busy}
+
+/* Files go one at a time, so one failure doesn't block the rest. */
+async function uploadFiles(files) {
+  if (!files.length) return;
+  busy = true; error = null; renderModal();
+  const failures = [];
+  for (const file of files) {
+    try { rows = [...rows, await uploadFile(file, chosen, target)]; renderRows(); }
+    catch (err) { failures.push(`${file.name}: ${err?.message ?? "couldn't be added"}`); }
+  }
+  busy = false;
+  if (failures.length) { error = failures.join("\n"); renderModal(); return; }
+  setOpen(false);
+}
+function slug(title) { return title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 60) || "note"; }
+function submit() {
+  if (chosen === "youtube") { const name = url.trim(); return uploadFiles([{ name, size: 1, title: "YouTube video" }]); }
+  if (chosen === "markdown" && noteBody.trim()) { const title = noteTitle.trim() || "Pasted note"; return uploadFiles([{ name: `${slug(title)}.md`, size: noteBody.length, title }]); }
+  picker.click();
+}
+
+modal.addEventListener("click", (e) => {
+  if (e.target.id === "scrim") return dismiss();
+  const b = e.target.closest("button"); if (!b || b.disabled) return;
+  if (b.hasAttribute("data-close")) dismiss();
+  else if (b.dataset.base) { target = b.dataset.base; renderModal(); }
+  else if (b.dataset.type) { chosen = b.dataset.type; error = null; renderModal(); modal.querySelector(`[data-type="${chosen}"]`).focus(); }
+  else if (b.hasAttribute("data-choose")) picker.click();
+  else if (b.hasAttribute("data-submit")) submit();
+});
+picker.onchange = () => { uploadFiles([...picker.files]); picker.value = ""; };
+addEventListener("keydown", (e) => {
+  if (!open) return;
+  if (e.key === "Escape") return dismiss();
+  if (e.key === "Tab") { // trap focus, wrapping at both ends
+    const f = [...modal.querySelectorAll("button:not([disabled]), input, textarea")];
+    if (!f.length) return;
+    if (e.shiftKey && document.activeElement === f[0]) { e.preventDefault(); f.at(-1).focus(); }
+    else if (!e.shiftKey && document.activeElement === f.at(-1)) { e.preventDefault(); f[0].focus(); }
+  }
+});
+document.getElementById("open").onclick = () => setOpen(true);
+
+renderRows();
+if (new URLSearchParams(location.search).has("shot")) {
+  rows = [
+    rows[0],
+    { id: "s1", title: "Q3 interview notes", filename: "q3-interview-notes.md", source_type: "markdown", base: "b2", status: "embedding" },
+    { id: "s2", title: "Competitor deck", filename: "competitor-deck.pptx", source_type: "pptx", base: "b2", status: "chunking" },
+    { id: "s3", title: "Customer call — week 31", filename: "customer-call-wk31.mp3", source_type: "audio", base: "b2", status: "extracting" },
+    { id: "s4", title: "Scanned contract", filename: "scanned-contract.pdf", source_type: "pdf", base: "b1", status: "failed", error: "This PDF has no text layer to read." }
+  ];
+  renderRows();
+}
+</script>
+</body>
+</html>

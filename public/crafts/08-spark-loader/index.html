@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>08 · Spark loader — Crafts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400&family=Azeret+Mono:wght@700&display=swap" rel="stylesheet">
+<style>
+  :root { --deep: #060608; --surface: #121316; --ink: #f1f3f5; --signal: #ff7a57; --glow: 0 0 9px color-mix(in oklab, var(--signal) 50%, transparent); --mono: "Azeret Mono", ui-monospace, monospace; }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body { background: var(--surface); color: var(--ink); font-family: "Inter Tight", system-ui, sans-serif; overflow: hidden; }
+
+  /* The page the loader lifts off. */
+  .page { height: 100%; display: grid; place-items: center; text-align: center; }
+  .page .mark { width: 72px; height: 72px; display: inline-block; cursor: pointer; }
+  .page .mark svg { width: 100%; height: 100%; overflow: visible; }
+  .page p { margin: 18px 0 0; font: 700 11px/1.6 var(--mono); text-transform: uppercase; letter-spacing: .04em; color: color-mix(in oklab, var(--ink) 50%, transparent); }
+  .replay { all: unset; cursor: pointer; margin-top: 28px; padding: 10px 14px; border: 1px dashed color-mix(in oklab, var(--ink) 30%, transparent); font: 700 11px/1 var(--mono); text-transform: uppercase; letter-spacing: .04em; }
+  .replay:hover { border-color: var(--signal); color: var(--signal); }
+  .meta { position: fixed; top: 24px; left: 28px; font: 700 11px/1.5 var(--mono); text-transform: uppercase; letter-spacing: .04em; color: color-mix(in oklab, var(--ink) 45%, transparent); }
+  .meta b { color: var(--signal); }
+
+  .loader { position: fixed; inset: 0; z-index: 10; background: var(--deep); }
+  .noise { position: absolute; inset: -192px; opacity: .05; animation: grain .48s steps(1) infinite; pointer-events: none; }
+  @keyframes grain { 0% { transform: translate(0, 0) } 12.5% { transform: translate(-61px, 37px) } 25% { transform: translate(43px, -88px) } 37.5% { transform: translate(-120px, 12px) } 50% { transform: translate(90px, 64px) } 62.5% { transform: translate(-22px, -140px) } 75% { transform: translate(131px, -40px) } 87.5% { transform: translate(-77px, 101px) } }
+  .spark { position: absolute; top: 50%; left: 50%; width: 196px; translate: -50% -50%; }
+  .spark svg { display: block; width: 100%; height: auto; overflow: visible; }
+  .lpin { position: absolute; width: 8px; height: 8px; background: var(--signal); }
+  .lpin.tl { top: 54px; left: 64px; } .lpin.tr { top: 54px; right: 64px; } .lpin.bl { bottom: 54px; left: 64px; } .lpin.br { bottom: 54px; right: 64px; }
+  .label { position: absolute; left: 50%; translate: -50% 0; font: 700 11px/1 var(--mono); text-transform: uppercase; color: color-mix(in oklab, var(--ink) 50%, transparent); white-space: pre; }
+  .label.top { top: 54px; } .label.bottom { bottom: 54px; }
+</style>
+</head>
+<body>
+<div class="meta"><b>08</b> / Spark loader — from Saga's landing page</div>
+
+<main class="page">
+  <div>
+    <span class="mark" id="navmark" aria-label="Saga mark — hover it"></span>
+    <p>Hover the mark · leave mid-turn and it finishes the turn</p>
+    <button class="replay" id="replay">Replay the intro</button>
+  </div>
+</main>
+
+<div class="loader" id="loader" aria-hidden="true">
+  <div class="noise" id="noise"></div>
+  <span class="lpin tl"></span><span class="lpin tr"></span><span class="lpin bl"></span><span class="lpin br"></span>
+  <span class="label top" data-text="Saga"></span>
+  <span class="label bottom" data-text="Cited answers"></span>
+  <div class="spark" id="spark"></div>
+</div>
+
+<script>
+/* ---- the mark: four petals around (12, 12.5) ---- */
+const PETALS = [
+  { key: "top", edge: "M9.12 9.62A4 4 0 0 0 10.1 8L12 2.5L13.9 8A4 4 0 0 0 14.88 9.62", center: [12, 7.5] },
+  { key: "right", edge: "M14.88 9.62A4 4 0 0 0 16.5 10.6L22 12.5L16.5 14.4A4 4 0 0 0 14.88 15.38", center: [17, 12.5] },
+  { key: "bottom", edge: "M14.88 15.38A4 4 0 0 0 13.9 17L12 22.5L10.1 17A4 4 0 0 0 9.12 15.38", center: [12, 17.5] },
+  { key: "left", edge: "M9.12 15.38A4 4 0 0 0 7.5 14.4L2 12.5L7.5 10.6A4 4 0 0 0 9.12 9.62", center: [7, 12.5] }
+];
+const fillD = (p) => `M12 12.5L${p.edge.slice(1)}Z`;
+const MARK = [12, 12.5];
+
+document.getElementById("spark").innerHTML = `<svg viewBox="1.5 2 21 21">
+  <defs><mask id="loader-mark" maskUnits="userSpaceOnUse" x="1.5" y="2" width="21" height="21">
+    ${PETALS.map((p) => `<path class="petal-${p.key}" d="${fillD(p)}" fill="#fff" stroke="#fff" stroke-width=".12"/>`).join("")}
+  </mask></defs>
+  <g mask="url(#loader-mark)"><rect id="fill" x="1.5" y="2" width="21" height="21" fill="#f1f3f5"/></g>
+  <g fill="none" stroke="#f1f3f5" stroke-width="1" stroke-linejoin="round">
+    ${PETALS.map((p) => `<path class="petal-${p.key}" d="${p.edge}" vector-effect="non-scaling-stroke"/>`).join("")}
+  </g></svg>`;
+document.getElementById("navmark").innerHTML = `<svg viewBox="1.5 2 21 21" id="navsvg"><g fill="#f1f3f5">${PETALS.map((p) => `<path class="np-${p.key}" d="${fillD(p)}"/>`).join("")}</g></svg>`;
+
+/* Film grain: one random grey tile, stepped through 8 offsets. */
+(() => { const c = document.createElement("canvas"); c.width = c.height = 192; const g = c.getContext("2d"), img = g.createImageData(192, 192);
+  for (let i = 0; i < img.data.length; i += 4) { const v = Math.random() * 255; img.data[i] = img.data[i + 1] = img.data[i + 2] = v; img.data[i + 3] = 255; }
+  g.putImageData(img, 0, 0); document.getElementById("noise").style.backgroundImage = `url(${c.toDataURL()})`; })();
+
+/* ---- eases and a seekable timeline ---- */
+const EASE = {
+  none: (t) => t, "sine.in": (t) => 1 - Math.cos((t * Math.PI) / 2),
+  "power2.inOut": (t) => (t < .5 ? 4 * t ** 3 : 1 - (-2 * t + 2) ** 3 / 2),
+  "power4.inOut": (t) => (t < .5 ? 16 * t ** 5 : 1 - (-2 * t + 2) ** 5 / 2),
+  "power4.in": (t) => t ** 5
+};
+function timeline() {
+  const items = []; let end = 0;
+  return { to(at, dur, ease, fn) { items.push({ at, dur, e: EASE[ease], fn }); end = Math.max(end, at + dur); return this; },
+    get end() { return end; },
+    seek(time) { for (const it of items) if (time >= it.at) it.fn(it.e(it.dur ? Math.min(1, (time - it.at) / it.dur) : 1)); } };
+}
+function scramble(text, p, chars) {
+  if (p >= .9999) return text; // eases can land a hair under 1
+  const shown = Math.floor(text.length * p); let out = text.slice(0, shown);
+  for (let i = shown; i < text.length; i++) out += text[i] === " " ? " " : chars[(Math.random() * chars.length) | 0];
+  return out;
+}
+
+const loader = document.getElementById("loader"), fill = document.getElementById("fill");
+const pins = [...loader.querySelectorAll(".lpin")], labels = [...loader.querySelectorAll(".label")];
+const FLICKER = [[35, 10, .85, .03], [9, 0, .5, .02], [42, 15, .8, .04], [8, 1, .6, .02], [38, 12, .85, .03], [10, 2, .7, .02], [45, 18, .8, .04], [9, 0, .5, .05]];
+const shadow = ([b, s, a]) => `0 0 ${b}px ${s}px rgba(255,122,87,${a})`;
+function flickerAt(t) { // keyframes, eased "none", tweening between frames
+  let acc = 0, prev = [0, 0, 0];
+  for (const k of FLICKER) { if (t <= acc + k[3]) { const p = (t - acc) / k[3]; return prev.map((v, i) => v + (k[i] - v) * p); } acc += k[3]; prev = k; }
+  return prev;
+}
+const FLICKER_DUR = FLICKER.reduce((s, k) => s + k[3], 0);
+
+function petalTransform(p, e) {
+  const [cx, cy] = p.center, dx = (MARK[0] - cx) * e, dy = (MARK[1] - cy) * e;
+  return `translate(${dx} ${dy}) translate(${cx} ${cy}) rotate(${180 * e}) scale(${1 - e}) translate(${-cx} ${-cy})`;
+}
+
+function reset() {
+  loader.style.opacity = 1; loader.style.visibility = "visible";
+  fill.setAttribute("transform", "translate(0 21)"); // yPercent 100: empty
+  for (const l of labels) { l.textContent = ""; l.style.scale = 1; }
+  for (const p of pins) { p.style.boxShadow = "none"; p.style.scale = 1; }
+  for (const p of PETALS) loader.querySelectorAll(`.petal-${p.key}`).forEach((el) => el.removeAttribute("transform"));
+}
+const tl = timeline();
+labels.forEach((l) => { const text = l.dataset.text; tl.to(0, 1.5, "sine.in", (p) => (l.textContent = scramble(text, p, text.replace(/\s/g, "")))); });
+tl.to(.4, 1.2, "power2.inOut", (p) => fill.setAttribute("transform", `translate(0 ${21 * (1 - p)})`));
+tl.to(1.5, .6, "power4.inOut", (p) => { for (const el of [...pins, ...labels]) el.style.scale = 1 - p; });
+for (const pt of PETALS) tl.to(1.5, .8, "power4.in", (e) => loader.querySelectorAll(`.petal-${pt.key}`).forEach((el) => el.setAttribute("transform", petalTransform(pt, e))));
+tl.to(1.9, 1.5, "power2.inOut", (p) => { loader.style.opacity = 1 - p; loader.style.visibility = p >= 1 ? "hidden" : "visible"; });
+
+const WAIT = 1, reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+let start = null, frozenAt = null;
+function shufflePins() { // stagger "from: random"
+  const order = pins.map((_, i) => i).sort(() => Math.random() - .5);
+  pins.forEach((pin, i) => (pin.dataset.slot = order[i]));
+}
+function run(now) {
+  if (start === null) start = now;
+  const t = frozenAt ?? (now - start) / 1000 - WAIT;
+  reset();
+  if (reduced) { const p = Math.min(1, (now - start) / 600); loader.style.opacity = 1 - p; if (p >= 1) loader.style.visibility = "hidden"; }
+  else if (t >= 0) {
+    tl.seek(t);
+    // The pins flicker in a random order: each reads its slot in the 0.1s stagger.
+    pins.forEach((pin) => { const local = t - (.4 + Number(pin.dataset.slot) * .1); if (local >= 0) pin.style.boxShadow = shadow(flickerAt(Math.min(local, FLICKER_DUR))); });
+  }
+  if (frozenAt !== null || t < tl.end + .1) requestAnimationFrame(run);
+}
+function replay() { start = null; shufflePins(); requestAnimationFrame(run); }
+document.getElementById("replay").onclick = replay;
+
+/* ---- the navbar mark: fold and turn while hovered; leaving finishes the turn ---- */
+const navmark = document.getElementById("navmark"), navsvg = document.getElementById("navsvg");
+const navPetals = PETALS.map((p) => ({ p, el: navsvg.querySelector(`.np-${p.key}`) }));
+let hoverStart = null, finishing = null;
+function navAt(t) { // a 1s loop: petals 1 → 0 → 1 (0.5s each, stagger amount 0.05), the whole mark turns 180°
+  const rot = 180 * EASE["power2.inOut"](Math.min(1, t));
+  navsvg.style.transform = `rotate(${rot}deg)`;
+  navPetals.forEach(({ p, el }, i) => {
+    const local = t - (i * .05) / (PETALS.length - 1);
+    const s = local < .5 ? 1 - EASE["power2.inOut"](Math.max(0, local) / .5) : EASE["power2.inOut"](Math.min(1, (local - .5) / .5));
+    const [cx, cy] = p.center;
+    el.setAttribute("transform", `translate(${cx} ${cy}) scale(${Math.max(0, s)}) translate(${-cx} ${-cy})`);
+  });
+}
+function navLoop(now) {
+  if (finishing) {
+    const p = Math.min(1, (now - finishing.at) / (finishing.left * 1000));
+    navAt(finishing.from + (1 - finishing.from) * p); // linear to the end of the turn
+    if (p >= 1) { finishing = null; navmark.style.pointerEvents = ""; navAt(0); navsvg.style.transform = ""; return; }
+    return requestAnimationFrame(navLoop);
+  }
+  if (hoverStart === null) return;
+  navAt(((now - hoverStart) / 1000) % 1);
+  requestAnimationFrame(navLoop);
+}
+navmark.addEventListener("pointerenter", () => { if (finishing) return; hoverStart = performance.now(); requestAnimationFrame(navLoop); });
+navmark.addEventListener("pointerleave", () => {
+  if (hoverStart === null) return;
+  const progress = ((performance.now() - hoverStart) / 1000) % 1;
+  hoverStart = null; navmark.style.pointerEvents = "none"; // ignore the pointer until the turn completes
+  finishing = { from: progress, left: 1 - progress, at: performance.now() };
+  requestAnimationFrame(navLoop);
+});
+
+shufflePins();
+if (new URLSearchParams(location.search).has("shot")) { pins.forEach((pin, i) => (pin.dataset.slot = i)); frozenAt = 0.95; }
+requestAnimationFrame(run);
+</script>
+</body>
+</html>

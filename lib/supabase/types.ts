@@ -25,6 +25,8 @@ export type CraftRow = {
   source_url?: string | null;
   aspect?: number | null;
   sort?: number | null;
+  /* ---- 0008_saga_crafts: set for rows synced from a migration ---- */
+  slug?: string | null;
 };
 
 export type WritingRow = {

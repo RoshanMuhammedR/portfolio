@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>09 · Menu reveal — Crafts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@300;400&family=Azeret+Mono:wght@700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --surface: #121316; --ink: #f1f3f5; --signal: #ff7a57; --on-signal: #121316;
+    --ease-power4: cubic-bezier(.215, .61, .355, 1);
+    --fluid: calc((100vw - 402px) / 1518);
+    --t-xl: clamp(25px, calc(25px + 20 * var(--fluid)), 45px);
+    --padding: clamp(20px, calc(20px + 40 * var(--fluid)), 60px);
+    --mono: "Azeret Mono", ui-monospace, monospace;
+  }
+  .light { --surface: #f8f9fa; --ink: #1f1f1f; --signal: #f6552c; --on-signal: #ffffff; }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body { background: var(--surface); color: var(--ink); font-family: "Inter Tight", system-ui, sans-serif; letter-spacing: -.008em; overflow: hidden; }
+  a { color: inherit; text-decoration: none; }
+  button { all: unset; cursor: pointer; }
+  :focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
+
+  .navbar { position: fixed; z-index: 20; top: 20px; left: var(--padding); right: var(--padding); display: flex; align-items: center; justify-content: space-between; }
+  .brand { display: flex; align-items: center; gap: 10px; font-size: 18px; }
+  .brand svg { width: 22px; height: 22px; }
+  .right { display: flex; align-items: center; gap: 24px; }
+  .account { display: flex; gap: 8px; transition: opacity .3s .6s; }
+  .is-menu-open .account { opacity: 0; transition-delay: 0s; }
+  .account a { font: 700 10px/1 var(--mono); text-transform: uppercase; letter-spacing: .04em; padding: 12px 14px; border: .8px dashed color-mix(in oklab, var(--ink) 35%, transparent); border-radius: 5px; }
+  .account a.accent { background: var(--signal); color: var(--on-signal); border-color: transparent; }
+  .toggle { display: flex; align-items: center; gap: 12px; }
+  .toggle-label { font: 700 11px/1 var(--mono); text-transform: uppercase; letter-spacing: .04em; color: var(--signal); }
+  .toggle-btn { position: relative; width: 38px; height: 38px; border-radius: 5px; border: .8px dashed color-mix(in oklab, var(--ink) 35%, transparent); }
+
+  .open span { position: absolute; height: 3.5px; transform-origin: 100%; transition: transform .38s var(--ease-power4) .64s; }
+  .open span:nth-child(1) { top: 11px; left: 11.5px; width: 14px; background: var(--ink); }
+  .open span:nth-child(2) { top: 17px; left: 11.5px; width: 14px; background: var(--ink); }
+  .open span:nth-child(3) { top: 23px; right: 11.5px; width: 5px; background: var(--signal); }
+  .close::before { content: ""; position: absolute; inset: 0; border-radius: 5px; background: var(--signal); transform: scale(0) translateY(10px); transition: transform .38s var(--ease-power4) .4s; }
+  .close span { position: absolute; top: 16.5px; width: 14px; height: 3.5px; background: var(--on-signal); transition: transform .42s var(--ease-power4) .4s; }
+  .close span:first-child { left: 11.5px; transform: rotate(-45deg) scaleX(0); }
+  .close span:last-child { right: 11.5px; transform: rotate(45deg) scaleX(0); }
+  .is-menu-open .open span { transform: scaleX(0); transition-delay: 0s; }
+  .is-menu-open .close::before { transform: scale(1) translateY(0); transition-delay: 0s; }
+  .is-menu-open .close span:first-child { transform: rotate(-45deg) scaleX(1); }
+  .is-menu-open .close span:last-child { transform: rotate(45deg) scaleX(1); }
+
+  .backdrop { position: fixed; inset: 0; z-index: 10; background: color-mix(in oklab, var(--surface) 50%, transparent); backdrop-filter: blur(7px); opacity: 0; pointer-events: none; transition: opacity .3s var(--ease-power4); }
+  .is-menu-open .backdrop { opacity: 1; pointer-events: auto; }
+
+  .menu { position: fixed; z-index: 15; top: 72px; right: var(--padding); width: 479px; max-width: 65vw; padding: var(--padding); opacity: 0; pointer-events: none; color: var(--ink); }
+  .menu-bg { position: absolute; inset: 0; background: #ffffff; border: 1px dashed var(--signal); border-radius: 5px; transform-origin: 100% 0; transform: scale(0); }
+  .menu-inner { position: relative; }
+  .links { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+  .links li { overflow: hidden; }
+  .link { position: relative; display: inline-flex; align-items: baseline; padding: 7px 11px 7px 6px; font-size: var(--t-xl); line-height: 1.1; }
+  .link-bg { position: absolute; inset: 0; background: var(--signal); transform: scaleX(0); transform-origin: 0; transition: transform .64s var(--ease-power4); }
+  .link .idx, .link .lbl { position: relative; opacity: .5; transition: color .3s .2s, opacity .3s .2s; }
+  .link .idx { width: 50px; font-size: .55em; }
+  @media (min-width: 768px) { .link .idx { margin-right: 40px; } }
+  .link .arrow { position: absolute; top: 0; bottom: 0; left: 100%; width: 64px; overflow: hidden; }
+  .link .arrow span { position: absolute; inset: 0; display: grid; place-items: center; background: var(--signal); transform: translateX(-100%); transition: transform .34s var(--ease-power4) .22s; }
+  .link .arrow svg { width: 25px; fill: var(--on-signal); }
+  .link.is-hover .link-bg { transform: scaleX(1); }
+  .link.is-hover .idx, .link.is-hover .lbl { color: var(--on-signal); opacity: 1; }
+  .link.is-hover .arrow span { transform: none; }
+  .info { display: flex; gap: 40px; margin-top: calc(var(--padding) * .8); }
+  .info div { overflow: hidden; }
+  .info .t { display: block; font-size: 13px; font-weight: 300; margin-bottom: 4px; }
+  .info .v { display: block; font: 700 10px/1.4 var(--mono); text-transform: uppercase; letter-spacing: .04em; opacity: .5; transition: opacity .2s; }
+  .info a:hover .v { opacity: 1; }
+  .rise { display: block; }
+
+  .page { height: 100%; display: grid; place-items: center; text-align: center; }
+  .page h1 { margin: 0; font-weight: 400; font-size: clamp(40px, 7vw, 88px); line-height: 1.05; letter-spacing: -.022em; }
+  .page p { margin: 16px 0 0; font: 700 11px/1.6 var(--mono); text-transform: uppercase; letter-spacing: .04em; color: color-mix(in oklab, var(--ink) 45%, transparent); }
+  .meta { position: fixed; bottom: 24px; left: var(--padding); font: 700 11px/1.5 var(--mono); text-transform: uppercase; letter-spacing: .04em; color: color-mix(in oklab, var(--ink) 45%, transparent); }
+  .meta b { color: var(--signal); }
+</style>
+</head>
+<body>
+<header class="navbar">
+  <a class="brand" href="#" aria-label="Saga"><svg viewBox="1.5 2 21 21" aria-hidden="true"><path fill="#f1f3f5" d="M12 12.5L9.12 9.62A4 4 0 0 0 10.1 8L12 2.5L13.9 8A4 4 0 0 0 14.88 9.62ZM12 12.5L14.88 9.62A4 4 0 0 0 16.5 10.6L22 12.5L16.5 14.4A4 4 0 0 0 14.88 15.38ZM12 12.5L14.88 15.38A4 4 0 0 0 13.9 17L12 22.5L10.1 17A4 4 0 0 0 9.12 15.38ZM12 12.5L9.12 15.38A4 4 0 0 0 7.5 14.4L2 12.5L7.5 10.6A4 4 0 0 0 9.12 9.62Z"/></svg>Saga</a>
+  <div class="right">
+    <nav class="account" id="account"></nav>
+    <button class="toggle" id="toggle" aria-expanded="false" aria-controls="menu">
+      <span class="toggle-label">Menu</span>
+      <span class="toggle-btn"><span class="open"><span></span><span></span><span></span></span><span class="close"><span></span><span></span></span></span>
+    </button>
+  </div>
+</header>
+<div class="backdrop" id="backdrop"></div>
+<div class="menu light" id="menu" inert>
+  <div class="menu-bg" id="menu-bg"></div>
+  <div class="menu-inner">
+    <ul class="links" id="links"></ul>
+    <div class="info" id="info"></div>
+  </div>
+</div>
+
+<main class="page"><div><h1>Saga</h1><p>Click Menu · hover the links · Escape or click outside to close</p></div></main>
+<div class="meta"><b>09</b> / Menu reveal — from Saga's landing page</div>
+
+<script>
+/* ---- real copy ---- */
+const LINKS = [{ label: "How it works" }, { label: "Library" }, { label: "Get started" }];
+const INFO = [{ title: "New to Saga", label: "Create your account" }, { title: "Already have one", label: "Log in" }];
+const ACCOUNT = [{ label: "Log in" }, { label: "Sign up", accent: true }];
+
+const PIX = ["...#...", "....#..", ".....#.", "#######", ".....#.", "....#..", "...#..."];
+const arrow = `<svg viewBox="0 0 7 7" aria-hidden="true">${PIX.flatMap((r, y) => [...r].map((c, x) => (c === "#" ? `<rect x="${x + .07}" y="${y + .07}" width=".86" height=".86"/>` : ""))).join("")}</svg>`;
+document.getElementById("account").innerHTML = ACCOUNT.map((a) => `<a href="#" class="${a.accent ? "accent" : ""}">${a.label}</a>`).join("");
+document.getElementById("links").innerHTML = LINKS.map((l, i) => `<li><a class="link" href="#"><span class="link-bg"></span><span class="idx rise">0${i + 1}</span><span class="lbl">${l.label}</span><span class="arrow"><span>${arrow}</span></span></a></li>`).join("");
+document.getElementById("info").innerHTML = INFO.map((x) => `<div><span class="t">${x.title}</span><a href="#"><span class="v">${x.label}</span></a></div>`).join("");
+
+const menu = document.getElementById("menu"), bg = document.getElementById("menu-bg"), toggle = document.getElementById("toggle");
+const links = [...menu.querySelectorAll(".link")], values = [...menu.querySelectorAll(".v")];
+
+/* ---- the GSAP timeline, played forward to open and reversed to close ---- */
+const p4 = (t) => (t < .5 ? 16 * t ** 5 : 1 - (-2 * t + 2) ** 5 / 2);
+const seg = (t, at, dur) => Math.max(0, Math.min(1, (t - at) / dur));
+// fade 0.05 → bg scale 0.8 → values from "-=0.55" → links from "-=0.75"; stagger amount 0.05 from the end
+const BG_AT = .05, BG_END = BG_AT + .8, VAL_AT = BG_END - .55, VAL_END = VAL_AT + .05 + .8, LINK_AT = VAL_END - .75, END = LINK_AT + .05 + .8;
+function seek(t) {
+  const fade = seg(t, 0, .05);
+  menu.style.opacity = fade; menu.style.pointerEvents = fade > 0 ? "auto" : "none";
+  bg.style.transform = `scale(${p4(seg(t, BG_AT, .8))})`;
+  values.forEach((el, i) => { const off = ((values.length - 1 - i) / Math.max(1, values.length - 1)) * .05; el.style.transform = `translateY(${105 * (1 - p4(seg(t, VAL_AT + off, .8)))}%)`; });
+  links.forEach((el, i) => { const off = ((links.length - 1 - i) / Math.max(1, links.length - 1)) * .05; el.style.transform = `translateY(${105 * (1 - p4(seg(t, LINK_AT + off, .8)))}%)`; });
+}
+
+let time = 0, dir = -1, prev = null, raf = 0;
+function frame(now) {
+  if (prev !== null) time = Math.max(0, Math.min(END, time + dir * (now - prev) / 1000));
+  prev = now; seek(time);
+  if ((dir > 0 && time < END) || (dir < 0 && time > 0)) raf = requestAnimationFrame(frame); else { raf = 0; prev = null; }
+}
+function setOpen(open) {
+  dir = open ? 1 : -1;
+  document.body.classList.toggle("is-menu-open", open);
+  toggle.setAttribute("aria-expanded", open);
+  menu.inert = !open;
+  if (!open) links.forEach((l) => l.classList.remove("is-hover"));
+  if (!raf) { prev = null; raf = requestAnimationFrame(frame); }
+}
+const isOpen = () => dir > 0;
+toggle.onclick = () => setOpen(!isOpen());
+document.getElementById("backdrop").onclick = () => setOpen(false);
+addEventListener("keydown", (e) => { if (e.key === "Escape" && isOpen()) { setOpen(false); toggle.focus(); } });
+const fine = matchMedia("(hover: hover) and (pointer: fine)");
+links.forEach((l) => {
+  l.addEventListener("click", (e) => { e.preventDefault(); setOpen(false); });
+  l.addEventListener("mouseenter", () => fine.matches && l.classList.add("is-hover"));
+  l.addEventListener("mouseleave", () => l.classList.remove("is-hover"));
+  l.addEventListener("focus", () => l.classList.add("is-hover"));
+  l.addEventListener("blur", () => l.classList.remove("is-hover"));
+});
+seek(0);
+
+if (new URLSearchParams(location.search).has("shot")) {
+  document.body.classList.add("is-menu-open"); menu.inert = false; dir = 1; time = END; seek(END);
+  links[1].classList.add("is-hover");
+}
+</script>
+</body>
+</html>

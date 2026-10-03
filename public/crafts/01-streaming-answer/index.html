@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>01 · Streaming answer — Crafts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Newsreader:ital,wght@1,400&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f8f9fa; --card: #fff; --muted: #f1f3f4; --strong: #e8eaed; --ink: #1f1f1f; --mf: #5f6368; --ms: #9aa0a6;
+    --p: #f6552c; --pa: #e0431b; --psoft: #fff2ed; --border: #dadce0; --bsoft: #e8eaed; --bstrong: #c7cacf;
+    --danger: #c82f5d; --ok: #148662; --reading: #98b9dd; --ready: #b9843e;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body { display: flex; flex-direction: column; background: var(--bg); color: var(--ink); font: 15px/1.5 "Plus Jakarta Sans", system-ui, sans-serif; }
+  button, textarea, input { font: inherit; color: inherit; }
+  button { cursor: pointer; background: none; border: 0; padding: 0; }
+  svg.i { width: 1em; height: 1em; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+  :focus-visible { outline: 2px solid var(--p); outline-offset: 2px; }
+
+  .bar { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; border-bottom: 1px solid var(--bsoft); background: var(--card); font-size: 12px; color: var(--mf); }
+  .brand { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 14px; color: var(--ink); }
+  .logo { width: 22px; height: 22px; border-radius: 6px; background: linear-gradient(135deg, #ff7a57, #f6552c 55%, #e0431b); }
+  .bar label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+  .bar input { accent-color: var(--p); }
+
+  .scroll { flex: 1; overflow-y: auto; }
+  .thread { max-width: 768px; margin: 0 auto; padding: 32px 32px 48px; display: flex; flex-direction: column; gap: 32px; }
+
+  .empty { text-align: center; padding-top: 64px; }
+  .empty h1 { font-size: 36px; line-height: 1.2; letter-spacing: -.02em; font-weight: 600; margin: 20px 0 0; }
+  .spark { display: inline-grid; place-items: center; width: 48px; height: 48px; border-radius: 16px; border: 1px solid #fedcd2; background: var(--psoft); color: var(--p); font-size: 24px; }
+  .empty p { color: var(--mf); font-size: 15px; max-width: 512px; margin: 12px auto 28px; }
+  .empty .sugs { display: flex; flex-direction: column; gap: 8px; align-items: center; }
+
+  .user { align-self: flex-end; max-width: 85%; background: var(--strong); border-radius: 8px 8px 2px 8px; padding: 12px 16px; font-weight: 500; white-space: pre-wrap; }
+
+  .stage { font-size: 13px; color: var(--mf); }
+  .skels { display: flex; flex-direction: column; gap: 12px; }
+  .skeleton { height: 16px; border-radius: 4px; background-image: linear-gradient(90deg, var(--muted) 0%, #f7f8f9 50%, var(--muted) 100%); background-size: 200% 100%; animation: saga-shimmer 1.6s linear infinite; }
+  @keyframes saga-shimmer { 0% { background-position: -200% 0 } 100% { background-position: 200% 0 } }
+
+  .prose { font-size: 15px; line-height: 1.625; display: flex; flex-direction: column; gap: 12px; }
+  .prose p, .prose ul { margin: 0; }
+  .prose ul { padding-left: 20px; display: flex; flex-direction: column; gap: 6px; }
+  .prose strong { font-weight: 600; }
+  .prose-streaming > *:last-child::after { content: "▌"; display: inline-block; width: .5ch; margin-left: .15ch; color: var(--p); animation: saga-caret 1s step-end infinite; }
+  .prose-streaming > ul:last-child::after { display: block; }
+  @keyframes saga-caret { 0%, 100% { opacity: 1 } 50% { opacity: 0 } }
+
+  .caps { font-size: 11px; line-height: 1.4; letter-spacing: .08em; font-weight: 600; text-transform: uppercase; }
+  .pill { display: inline-flex; align-items: center; gap: 5px; border-radius: 999px; padding: 4px 10px; background: var(--strong); color: var(--mf); }
+  .pill svg { font-size: 12px; }
+  .pill.ok { color: var(--ok); } .pill.warn { color: var(--ready); } .pill.bad { color: var(--danger); }
+
+  .cites { display: flex; flex-direction: column; gap: 8px; }
+  .cites-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; color: var(--mf); margin-bottom: 2px; }
+  .card { display: flex; align-items: flex-start; gap: 12px; border: 1px solid var(--border); border-radius: 6px; background: var(--card); padding: 12px; text-decoration: none; color: inherit; transition: border-color 150ms cubic-bezier(.4,0,.2,1); }
+  .card:hover { border-color: var(--bstrong); }
+  .tile { width: 32px; height: 32px; border-radius: 6px; display: grid; place-items: center; font-size: 18px; flex-shrink: 0; }
+  .tile svg { stroke-width: 1.75; }
+  .tile.pdf { background: rgb(152 185 221 / .25); color: #4d79a8; } .tile.audio { background: rgb(185 132 62 / .25); color: #8a5f24; }
+  .card .body { flex: 1; min-width: 0; }
+  .card .row1 { display: flex; align-items: center; gap: 8px; }
+  .card .t { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  .card .rel { font-size: 12px; margin-left: auto; white-space: nowrap; }
+  .card .ex { font: italic 13px/1.625 Newsreader, Georgia, serif; color: var(--mf); margin: 4px 0 0; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .card > .chev { color: var(--ms); font-size: 16px; margin-top: 8px; }
+
+  .follow h4 { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 500; color: var(--mf); margin: 0 0 8px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { border: 1px solid var(--border); border-radius: 999px; background: var(--card); padding: 6px 12px; font-size: 13px; color: var(--mf); transition: all 150ms cubic-bezier(.4,0,.2,1); }
+  .chip:hover { border-color: var(--p); background: var(--psoft); color: var(--p); }
+
+  .trace-t { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; color: var(--mf); }
+  .trace-t svg { font-size: 12px; transition: transform 150ms cubic-bezier(.4,0,.2,1); }
+  .trace-t[aria-expanded="true"] svg { transform: rotate(90deg); }
+  .trace { border-left: 1px solid var(--border); padding-left: 12px; margin-top: 8px; display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--mf); }
+  .trace b { color: rgb(31 31 31 / .7); font-weight: 500; }
+
+  .actions { display: flex; align-items: center; gap: 2px; }
+  .act { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; padding: 4px 8px; border-radius: 6px; color: var(--mf); }
+  .act:hover { background: var(--muted); }
+  .act svg { font-size: 14px; }
+  .act.on { color: var(--p); }
+  .time { margin-left: auto; font-size: 11px; color: var(--ms); }
+
+  .msg { display: flex; flex-direction: column; gap: 16px; }
+  .insufficient { border: 1px dashed var(--bstrong); background: var(--muted); border-radius: 8px; padding: 20px; }
+  .insufficient p { font-size: 13px; color: var(--mf); margin: 10px 0 0; }
+
+  .error { border: 1px solid rgb(200 47 93 / .4); border-radius: 8px; padding: 20px; display: flex; gap: 12px; }
+  .error > svg { font-size: 20px; color: var(--danger); margin-top: 2px; }
+  .error h3 { font-size: 16px; font-weight: 600; margin: 0; }
+  .error p { font-size: 13px; color: var(--mf); margin: 4px 0 12px; }
+  .btn2 { height: 36px; padding: 0 14px; border-radius: 6px; border: 1px solid var(--bstrong); background: var(--card); font-size: 13px; font-weight: 500; }
+  .btn2:hover { background: var(--muted); }
+
+  .composer { border-top: 1px solid var(--bsoft); background: var(--card); padding: 12px 16px 16px; }
+  .composer form { max-width: 768px; margin: 0 auto; display: flex; align-items: flex-end; gap: 8px; border: 1px solid var(--border); background: var(--bg); border-radius: 16px; padding: 8px; transition: border-color 150ms; }
+  .composer form:focus-within { border-color: var(--p); }
+  .composer textarea { flex: 1; border: 0; background: none; outline: none; resize: vertical; min-height: 40px; max-height: 160px; height: 40px; padding: 9px 8px; font-size: 15px; line-height: 1.45; }
+  .composer textarea::placeholder { color: var(--ms); }
+  .send { width: 40px; height: 40px; border-radius: 12px; background: var(--p); color: #fff; display: grid; place-items: center; font-size: 18px; transition: background 150ms; }
+  .send:hover { background: var(--pa); }
+  .send:disabled, textarea:disabled { opacity: .5; cursor: not-allowed; }
+  .hint { max-width: 768px; margin: 8px auto 0; font-size: 12px; color: var(--mf); }
+
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; } }
+  @media (max-width: 767px) { .thread { padding: 32px 20px; } }
+</style>
+</head>
+<body>
+<header class="bar">
+  <span class="brand"><span class="logo" aria-hidden="true"></span>Saga</span>
+  <span>Craft 01 · rebuilt from Saga · sample data, every question gets the same sample answer</span>
+  <label><input type="checkbox" id="fail"> Simulate failure</label>
+</header>
+<main class="scroll" id="scroll"><div class="thread" id="thread"></div></main>
+<div class="composer">
+  <form id="form">
+    <label class="sr" for="q">Ask a question</label>
+    <textarea id="q" rows="1" placeholder="Ask anything in your library…"></textarea>
+    <button class="send" id="send" type="submit" aria-label="Send"><svg class="i" viewBox="0 0 24 24"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg></button>
+  </form>
+  <p class="hint">Answering from 3 ready sources. Enter to send, Shift+Enter for a new line.</p>
+</div>
+
+<script>
+const ICON = {
+  pdf: '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/>',
+  audio: '<path d="M2 10v3"/><path d="M6 6v11"/><path d="M10 3v18"/><path d="M14 8v7"/><path d="M18 5v13"/><path d="M22 10v3"/>',
+  chev: '<path d="m9 18 6-6-6-6"/>',
+  sparkles: '<path d="M9.94 15.5A2 2 0 0 0 8.5 14.06l-6.14-1.58a.5.5 0 0 1 0-.96L8.5 9.94A2 2 0 0 0 9.94 8.5l1.58-6.14a.5.5 0 0 1 .96 0l1.58 6.14a2 2 0 0 0 1.44 1.44l6.14 1.58a.5.5 0 0 1 0 .96l-6.14 1.58a2 2 0 0 0-1.44 1.44l-1.58 6.14a.5.5 0 0 1-.96 0z"/>',
+  up: '<path d="M7 10v12"/><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z"/>',
+  down: '<path d="M17 14V2"/><path d="M9 18.12 10 14H4.17a2 2 0 0 1-1.92-2.56l2.33-8A2 2 0 0 1 6.5 2H20a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2.76a2 2 0 0 0-1.79 1.11L12 22a3.13 3.13 0 0 1-3-3.88Z"/>',
+  copy: '<rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>',
+  check: '<circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>',
+  tick: '<path d="M20 6 9 17l-5-5"/>',
+  info: '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>',
+  alert: '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/>'
+};
+const icon = (k) => `<svg class="i" viewBox="0 0 24 24" aria-hidden="true">${ICON[k]}</svg>`;
+const esc = (s) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+
+/* ---- sample data (the repo's fictional demo content; the answer, trace and checks are made up) ---- */
+const EMPTY_SUGGESTIONS = ["What are the main conclusions across my sources?", "Summarise what I've added most recently.", "What do my sources disagree about?"];
+const STATUSES = [{ stage: "resolving" }, { stage: "searching", hop: 1, of: 3 }, { stage: "ranking", candidates: 24 }, { stage: "grading" }, { stage: "reading", sources: 3 }, { stage: "generating" }];
+const ANSWER = "Two things, mostly.\n\n- **Freight costs.** Contracted haulage rates rose 11.2% and Northwind absorbed the increase, which cut gross margin by roughly 180 basis points [1].\n- **Mix.** Lower-margin general fulfilment grew 19% while bonded warehousing grew 4%, pulling the blended margin down [2].\n\nManagement expects the freight pressure to persist through Q3, with mix recovering once Rotterdam opens in September [3].";
+const CITATIONS = [
+  { filename: "northwind-q2-2026-10q.pdf", source_type: "pdf", locator: { type: "page", value: 14 }, score: 0.89, excerpt: "Contracted haulage rates increased 11.2% year on year following the Q1 renewal cycle. The Company elected to absorb the increase for shippers under existing contract terms, which reduced gross margin by approximately 180 basis points." },
+  { filename: "northwind-q2-2026-10q.pdf", source_type: "pdf", locator: { type: "page", value: 22 }, score: 0.81, excerpt: "Bonded warehousing revenue grew 4% against 19% for general fulfilment. As bonded carries a materially higher margin, the shift in mix reduced blended gross margin independently of any change within individual service lines." },
+  { filename: "northwind-q2-earnings-call.mp3", source_type: "audio", locator: { type: "timestamp", value: 1447 }, score: 0.74, excerpt: "On freight, assume that persists through the third quarter. On mix, Rotterdam comes online in September and we'd expect the bonded share to recover from there." }
+];
+const TRACE = { resolved_query: "Drivers of Northwind's Q2 gross margin decline", hops: [{ hop: 1, strategy: "initial", candidates: 24, kept: 3, sufficient: true }] };
+const GROUNDING = { verified: true, checked: 3, supported: 3, unsupported: [], invalid: [] };
+const SUGGESTIONS = ["How did bonded warehousing perform in Q1?", "When does the Rotterdam site open?", "What did management say about Q3 freight rates?"];
+
+/* ---- the real copy ---- */
+function describeStage(s) {
+  if (!s) return "";
+  const hop = s.hop > 1 ? ` (hop ${s.hop} of ${s.of})` : "";
+  switch (s.stage) {
+    case "resolving": return "Understanding the question";
+    case "searching": return (s.hop > 1 ? "Searching again" : "Searching your sources") + hop;
+    case "ranking": return `Weighing ${s.candidates} passages` + hop;
+    case "grading": return "Checking that's enough to answer" + hop;
+    case "rewriting": return "Rephrasing the search — broadened" + hop;
+    case "reading": return `Reading ${s.sources} passages`;
+    case "generating": return "Writing the answer";
+  }
+  return "Working on it";
+}
+function formatLocator(l) {
+  if (l.type === "page") return `Page ${l.value}`;
+  const m = Math.floor(l.value / 60), s = String(l.value % 60).padStart(2, "0");
+  return `${m}:${s}`;
+}
+
+/* ---- markdown, with the streaming guard ---- */
+function optimizeForStreaming(src) {
+  const marks = src.split("**").length - 1;
+  return marks % 2 ? src.slice(0, src.lastIndexOf("**")) : src;
+}
+function inline(s) { return esc(s).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>"); }
+function markdown(src) {
+  const out = [];
+  for (const block of src.split(/\n\n+/)) {
+    if (!block.trim()) continue;
+    const lines = block.split("\n");
+    if (lines.every((l) => l.startsWith("- "))) out.push(`<ul>${lines.map((l) => `<li>${inline(l.slice(2))}</li>`).join("")}</ul>`);
+    else out.push(`<p>${inline(block)}</p>`);
+  }
+  return out.join("");
+}
+
+/* ---- state ---- */
+let messages = [], streamingId = null, error = null, lastQuestion = "", runToken = 0;
+const thread = document.getElementById("thread"), scroller = document.getElementById("scroll");
+const form = document.getElementById("form"), input = document.getElementById("q"), send = document.getElementById("send");
+const end = document.createElement("div");
+
+function patch(id, p) { messages = messages.map((m) => (m.id === id ? { ...m, ...p } : m)); render(); }
+
+function relColour(score) { return score >= 0.8 ? "var(--ok)" : score >= 0.6 ? "var(--mf)" : "var(--ms)"; }
+
+function verifiedBadge(g) {
+  if (!g) return "";
+  if (g.invalid.length) return `<span class="pill caps bad">${icon("alert")}${g.invalid.length} citation${g.invalid.length > 1 ? "s" : ""} point at no source</span>`;
+  if (g.unsupported.length) return `<span class="pill caps warn">${icon("info")}${g.unsupported.length} claim${g.unsupported.length > 1 ? "s" : ""} not supported by the cited passage</span>`;
+  if (g.checked === 0) return "";
+  return `<span class="pill caps ok">${icon("check")}Claims verified</span>`;
+}
+
+function assistantHTML(m) {
+  const streaming = m.id === streamingId;
+  let h = "";
+  if (m.content === "" && streaming) {
+    h += `<div class="skels"><p class="stage" aria-live="polite">${esc(describeStage(m.status))}…</p><div class="skeleton" style="width:75%"></div><div class="skeleton"></div><div class="skeleton" style="width:66%"></div></div>`;
+  } else if (m.insufficient) {
+    h += `<div class="insufficient"><span class="pill caps">Not enough in your sources</span><p>This isn't an error — Saga found nothing close enough to quote. Add a source that covers it, or rephrase the question.</p></div>`;
+  } else {
+    const text = streaming ? optimizeForStreaming(m.content) : m.content;
+    h += `<div class="prose${streaming ? " prose-streaming" : ""}" aria-live="${streaming ? "polite" : "off"}">${markdown(text) || "<p></p>"}</div>`;
+  }
+  if (m.citations.length) {
+    h += `<div class="cites"><div class="cites-head"><span class="caps">${m.citations.length} cited passages</span>${verifiedBadge(m.grounding)}</div>`;
+    h += m.citations.map((c) => `
+      <a class="card" href="#" onclick="return false">
+        <span class="tile ${c.source_type}">${icon(c.source_type)}</span>
+        <span class="body">
+          <span class="row1"><span class="t">${esc(c.filename)}</span><span class="pill caps">${formatLocator(c.locator)}</span><span class="rel" style="color:${relColour(c.score)}">${Math.round(c.score * 100)}% relevance</span></span>
+          <p class="ex">“${esc(c.excerpt)}”</p>
+        </span>
+        <span class="chev">${icon("chev")}</span>
+      </a>`).join("");
+    h += `</div>`;
+  }
+  if (m.suggestions) {
+    h += `<div class="follow"><h4>${icon("sparkles")}You could also ask</h4><div class="chips">${m.suggestions.map((s) => `<button class="chip" data-ask="${esc(s)}">${esc(s)}</button>`).join("")}</div></div>`;
+  }
+  if (m.done) {
+    h += `<div><button class="trace-t" data-trace="${m.id}" aria-expanded="${!!m.traceOpen}">${icon("chev")}How this answer was found</button>`;
+    if (m.traceOpen) {
+      h += `<div class="trace"><span><b>Searched for</b> “${esc(TRACE.resolved_query)}”</span>${TRACE.hops.map((hp) => `<span><b>Hop ${hp.hop}</b> · ${hp.strategy} search · ${hp.candidates} candidates, kept ${hp.kept} · ${hp.sufficient ? "enough to answer" : "not enough yet"}</span>`).join("")}</div>`;
+    }
+    h += `</div><div class="actions">
+      <button class="act" data-copy="${m.id}">${icon(m.copied ? "tick" : "copy")}${m.copied ? "Copied" : "Copy"}</button>
+      <button class="act${m.vote === "up" ? " on" : ""}" data-vote="up" data-id="${m.id}" aria-label="Helpful" aria-pressed="${m.vote === "up"}">${icon("up")}</button>
+      <button class="act${m.vote === "down" ? " on" : ""}" data-vote="down" data-id="${m.id}" aria-label="Not helpful" aria-pressed="${m.vote === "down"}">${icon("down")}</button>
+      <span class="time">14:32</span></div>`;
+  }
+  return h;
+}
+
+function render() {
+  const busy = streamingId !== null;
+  input.disabled = busy; send.disabled = busy;
+  let h = "";
+  if (!messages.length && !error) {
+    h = `<div class="empty"><span class="spark">${icon("sparkles")}</span><h1>Ask your library.</h1><p>3 sources are ready. Every answer comes back with the passages behind it, and you can open any of them at the exact page or timestamp.</p><div class="sugs">${EMPTY_SUGGESTIONS.map((s) => `<button class="chip" data-ask="${esc(s)}">${esc(s)}</button>`).join("")}</div></div>`;
+  }
+  for (const m of messages) {
+    h += m.role === "user" ? `<div class="user">${esc(m.content)}</div>` : `<div class="msg">${assistantHTML(m)}</div>`;
+  }
+  if (error) h += `<div class="error" role="alert">${icon("alert")}<div><h3>That question didn't get through</h3><p>${esc(error)}</p><button class="btn2" data-retry>Try again</button></div></div>`;
+  thread.innerHTML = h;
+  thread.appendChild(end);
+}
+
+/* Auto-scroll on new messages or a new stream, not on every token. */
+let lastKey = "";
+function maybeScroll() {
+  const key = messages.length + ":" + streamingId;
+  if (key !== lastKey) { lastKey = key; end.scrollIntoView({ block: "end" }); }
+}
+
+const sleep = (ms, token) => new Promise((res, rej) => setTimeout(() => (token === runToken ? res() : rej(new Error("aborted"))), ms));
+
+/* Stand-in for the SSE stream: the same handler set, called on timers. */
+async function streamAnswer(handlers, token, fail) {
+  for (const s of STATUSES) { handlers.onStatus(s); await sleep(350, token); }
+  const words = ANSWER.match(/\S+\s*/g);
+  let i = 0;
+  while (i < words.length) {
+    const n = 2 + Math.floor(Math.random() * 3);
+    handlers.onDelta(words.slice(i, i + n).join("")); i += n;
+    if (fail && i > words.length * 0.45) throw new Error("The connection dropped while Saga was answering. Nothing was saved, so you can ask it again as-is.");
+    await sleep(40, token);
+  }
+  handlers.onCitations(CITATIONS);
+  handlers.onDone({ message_id: "m-" + Date.now() });
+  await sleep(600, token); handlers.onVerified(GROUNDING);
+  await sleep(300, token); handlers.onSuggestions(SUGGESTIONS);
+}
+
+async function ask(question) {
+  question = question.trim();
+  if (!question || streamingId !== null) return;
+  error = null; lastQuestion = question;
+  const token = ++runToken;
+  const userId = "u-" + token, assistantId = "a-" + token;
+  messages = [...messages, { id: userId, role: "user", content: question },
+    { id: assistantId, role: "assistant", content: "", citations: [], status: { stage: "resolving" }, grounding: null }];
+  streamingId = assistantId; input.value = "";
+  render(); maybeScroll();
+
+  let liveId = assistantId, streamed = "";
+  const patchAssistant = (p) => patch(liveId, p);
+  try {
+    await streamAnswer({
+      onStatus: (status) => patchAssistant({ status }),
+      onDelta: (d) => { streamed += d; patchAssistant({ content: streamed }); },
+      onCitations: (citations) => patchAssistant({ citations }),
+      onDone: (d) => { patchAssistant({ id: d.message_id, status: null, done: true }); liveId = d.message_id; streamingId = null; render(); maybeScroll(); },
+      onVerified: (grounding) => patchAssistant({ grounding }),
+      onSuggestions: (suggestions) => patchAssistant({ suggestions })
+    }, token, document.getElementById("fail").checked);
+  } catch (err) {
+    if (err.message === "aborted") return;
+    messages = messages.filter((m) => m.id !== userId && m.id !== liveId);
+    streamingId = null; error = err.message; render(); maybeScroll();
+  }
+}
+
+form.addEventListener("submit", (e) => { e.preventDefault(); ask(input.value); });
+input.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); form.requestSubmit(); } });
+
+thread.addEventListener("click", (e) => {
+  const t = e.target.closest("button"); if (!t) return;
+  if (t.dataset.ask) return ask(t.dataset.ask);
+  if (t.hasAttribute("data-retry")) { error = null; return ask(lastQuestion); }
+  if (t.dataset.trace) { const m = messages.find((x) => x.id === t.dataset.trace); return patch(m.id, { traceOpen: !m.traceOpen }); }
+  if (t.dataset.copy) {
+    const m = messages.find((x) => x.id === t.dataset.copy);
+    navigator.clipboard?.writeText(m.content).catch(() => {});
+    patch(m.id, { copied: true }); setTimeout(() => patch(m.id, { copied: false }), 1500); return;
+  }
+  if (t.dataset.vote) {
+    const m = messages.find((x) => x.id === t.dataset.id);
+    patch(m.id, { vote: m.vote === t.dataset.vote ? null : t.dataset.vote }); // optimistic; clicking the active thumb retracts it
+  }
+});
+
+render();
+
+if (new URLSearchParams(location.search).has("play")) setTimeout(() => ask(EMPTY_SUGGESTIONS[0]), 200);
+
+/* Capture mode for the portfolio thumbnail: a finished answer, no timers. */
+if (new URLSearchParams(location.search).has("shot")) {
+  messages = [{ id: "u", role: "user", content: "What drove the margin decline at Northwind in Q2?" },
+    { id: "a", role: "assistant", content: ANSWER, citations: CITATIONS, grounding: GROUNDING, suggestions: SUGGESTIONS, done: true, vote: "up" }];
+  render();
+}
+</script>
+</body>
+</html>

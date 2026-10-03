@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>02 · Retrieval terminal — Crafts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400&family=Azeret+Mono:wght@700&display=swap" rel="stylesheet">
+<style>
+  :root { --deep: #060608; --ink: #f1f3f5; --signal: #ff7a57; --mono: "Azeret Mono", ui-monospace, monospace; }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body { display: grid; place-items: center; background: radial-gradient(900px 620px at 50% 45%, #0d0d10 0%, var(--deep) 70%); color: var(--ink); font-family: "Inter Tight", system-ui, sans-serif; overflow: hidden; }
+  .meta { position: fixed; top: 24px; left: 28px; font: 700 11px/1.5 var(--mono); text-transform: uppercase; letter-spacing: .04em; color: color-mix(in oklab, var(--ink) 40%, transparent); }
+  .meta b { color: var(--signal); font-weight: 700; }
+
+  .terminal { width: min(560px, 86vw); padding-left: 20px; border-left: 1px solid color-mix(in oklab, var(--ink) 18%, transparent); font-family: var(--mono); font-weight: 700; display: flex; flex-direction: column; gap: 20px; }
+  .query { font: 400 20px/1.4 "Inter Tight", sans-serif; letter-spacing: -.008em; min-height: 2.8em; margin: 0; }
+  .prompt { font-family: var(--mono); font-weight: 700; color: var(--signal); margin-right: .6ch; }
+  .caret { display: inline-block; width: .5em; height: 1em; margin-left: 3px; vertical-align: -.14em; background: var(--signal); animation: caret-blink 1s steps(1, end) infinite; }
+  @keyframes caret-blink { 50% { opacity: 0 } }
+
+  .search { display: grid; grid-template-columns: 1fr auto; row-gap: 10px; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: color-mix(in oklab, var(--ink) 62%, transparent); }
+  .meter { position: relative; grid-column: 1 / -1; height: 1px; background: color-mix(in oklab, var(--ink) 16%, transparent); }
+  .meter::after { content: ""; position: absolute; inset: 0; background: var(--signal); transform: scaleX(var(--progress, 0)); transform-origin: 0 50%; }
+
+  .rows { display: flex; flex-direction: column; gap: 8px; }
+  .row { display: grid; grid-template-columns: 5.5rem minmax(0, 1fr) 4ch; align-items: baseline; column-gap: 12px; font-size: 12px; line-height: 1.2; }
+  .loc { text-transform: uppercase; color: color-mix(in oklab, var(--ink) 55%, transparent); }
+  .file { color: color-mix(in oklab, var(--ink) 85%, transparent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .score { color: var(--signal); text-align: right; }
+  .verdict { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--signal); }
+
+  .controls { position: fixed; left: 28px; bottom: 24px; display: flex; gap: 10px; align-items: center; font: 700 10px/1 var(--mono); text-transform: uppercase; letter-spacing: .04em; color: color-mix(in oklab, var(--ink) 45%, transparent); }
+  .controls button, .controls label { all: unset; cursor: pointer; padding: 9px 12px; border: 1px dashed color-mix(in oklab, var(--ink) 24%, transparent); color: var(--ink); }
+  .controls button:hover, .controls label:hover { border-color: var(--signal); color: var(--signal); }
+  .controls input { accent-color: var(--signal); margin: 0 6px 0 0; vertical-align: -2px; }
+  .controls span { margin-left: 6px; }
+</style>
+</head>
+<body>
+<div class="meta"><b>02</b> / Retrieval terminal — from Saga's landing page · sample data</div>
+
+<div class="terminal" id="terminal" aria-label="A retrieval readout: a question types itself, a search meter fills and three passages rank in with their scores">
+  <div class="body" id="body" style="display:flex;flex-direction:column;gap:20px">
+    <p class="query"><span class="prompt">&gt;</span><span id="typed"></span><span class="caret" aria-hidden="true"></span></p>
+    <div class="search" id="search"><span id="search-label"></span><span id="pct">0%</span><span class="meter" id="meter"></span></div>
+    <div class="rows" id="rows"></div>
+    <div class="verdict" id="verdict"></div>
+  </div>
+</div>
+
+<div class="controls">
+  <button id="replay">Replay</button>
+  <button id="pause">Pause</button>
+  <label><input type="checkbox" id="rm">Reduced motion</label>
+  <span>demo controls, not in the original</span>
+</div>
+
+<script>
+/* ---- a tiny seekable timeline: GSAP's eases, items applied in start order ---- */
+const EASE = {
+  none: (t) => t,
+  "power1.inOut": (t) => (t < .5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2),
+  "power2.out": (t) => 1 - (1 - t) ** 3, "power2.in": (t) => t ** 3,
+  "power3.out": (t) => 1 - (1 - t) ** 4
+};
+function timeline() {
+  const items = []; let end = 0, last = 0;
+  const tl = {
+    to(at, dur, ease, fn) { items.push({ at, dur, e: EASE[ease], fn }); last = at + dur; end = Math.max(end, last); return tl; },
+    get last() { return last; }, get end() { return end; },
+    seek(time) { for (const it of items) if (time >= it.at) it.fn(it.e(it.dur ? Math.min(1, (time - it.at) / it.dur) : 1)); }
+  };
+  return tl;
+}
+/* Vanilla stand-in for ScrambleTextPlugin: reveal left to right, noise elsewhere. */
+function scramble(text, p, chars) {
+  if (p >= .9999) return text; // eases can land a hair under 1
+  const shown = Math.floor(text.length * p);
+  let out = text.slice(0, shown);
+  for (let i = shown; i < text.length; i++) out += text[i] === " " ? " " : chars[(Math.random() * chars.length) | 0];
+  return out;
+}
+
+/* ---- sample data: the repo's own fictional demo content ---- */
+const TERMINAL = {
+  question: "What drove the margin decline at Northwind in Q2?",
+  search: "Searching 5 sources",
+  passages: [
+    { locator: "Page 14", file: "northwind-q2-2026-10q.pdf", score: 89 },
+    { locator: "Page 22", file: "northwind-q2-2026-10q.pdf", score: 81 },
+    { locator: "24:07", file: "northwind-q2-earnings-call.mp3", score: 74 }
+  ],
+  verdict: "3 passages cleared the bar — answer cited"
+};
+const FILE_CHARS = "abcdefghijklmnopqrstuvwxyz0123456789-";
+
+const $ = (id) => document.getElementById(id);
+const terminal = $("terminal"), body = $("body"), typed = $("typed"), search = $("search"), pct = $("pct"), verdict = $("verdict");
+$("search-label").textContent = TERMINAL.search;
+const rows = TERMINAL.passages.map((p) => {
+  const row = document.createElement("div"); row.className = "row";
+  row.innerHTML = `<span class="loc">${p.locator}</span><span class="file">${p.file}</span><span class="score">${p.score}%</span>`;
+  $("rows").appendChild(row);
+  return { row, file: row.children[1], score: row.children[2], p };
+});
+
+const Q = TERMINAL.question;
+function reset() {
+  body.style.opacity = 1; typed.textContent = "";
+  search.style.opacity = 0; search.style.setProperty("--progress", 0); pct.textContent = "0%";
+  for (const r of rows) { r.row.style.opacity = 0; r.row.style.transform = "translateX(-8px)"; }
+  verdict.style.opacity = 0; verdict.textContent = "";
+}
+function meter(p) { search.style.setProperty("--progress", p); pct.textContent = `${Math.round(p * 100)}%`; }
+
+/* One pass of the loop, with the original timings. */
+const tl = timeline();
+tl.to(0.2, Q.length * 0.034, "none", (p) => (typed.textContent = Q.slice(0, Math.round(p * Q.length))));
+const searchAt = tl.last + 0.35;
+tl.to(searchAt, 0.2, "none", (p) => (search.style.opacity = p));
+tl.to(searchAt, 1.4, "power1.inOut", meter);
+const rank = tl.last;
+rows.forEach((r, i) => {
+  const at = rank + 0.15 + i * 0.4;
+  tl.to(at, 0.3, "power2.out", (p) => { r.row.style.opacity = p; r.row.style.transform = `translateX(${-8 * (1 - p)}px)`; });
+  tl.to(at, 0.5, "none", (p) => (r.file.textContent = scramble(r.p.file, p, FILE_CHARS)));
+  tl.to(at, 0.7, "power2.out", (p) => (r.score.textContent = `${Math.round(p * r.p.score)}%`));
+});
+const cite = tl.last + 0.1;
+tl.to(cite, 0.2, "none", (p) => (verdict.style.opacity = p));
+tl.to(cite, 0.6, "none", (p) => (verdict.textContent = scramble(TERMINAL.verdict, p, "01")));
+const fadeAt = tl.last + 4.5;
+tl.to(fadeAt, 0.5, "power2.in", (p) => (body.style.opacity = 1 - p));
+const PASS = tl.end;
+
+/* ---- the player: entrance once, then the loop forever ---- */
+let clock = 0, paused = false, prev = null, reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const ENTER_DELAY = 0.6, ENTER = 0.8, LOOP_DELAY = 1.2;
+
+function frame(now) {
+  if (prev !== null && !paused) clock += Math.min(0.25, (now - prev) / 1000);
+  prev = now;
+  if (reduced) { finalState(); }
+  else {
+    const e = EASE["power3.out"](Math.max(0, Math.min(1, (clock - ENTER_DELAY) / ENTER)));
+    terminal.style.opacity = e; terminal.style.transform = `translateY(${12 * (1 - e)}px)`;
+    reset();
+    if (clock >= LOOP_DELAY) tl.seek((clock - LOOP_DELAY) % PASS);
+  }
+  requestAnimationFrame(frame);
+}
+function finalState() { terminal.style.opacity = 1; terminal.style.transform = "none"; reset(); tl.seek(cite + 0.8); }
+
+$("replay").onclick = () => { clock = 0; paused = false; $("pause").textContent = "Pause"; };
+$("pause").onclick = (e) => { paused = !paused; e.target.textContent = paused ? "Play" : "Pause"; };
+$("rm").checked = reduced;
+$("rm").onchange = (e) => (reduced = e.target.checked);
+document.addEventListener("visibilitychange", () => (prev = null));
+
+if (new URLSearchParams(location.search).has("shot")) { clock = LOOP_DELAY + cite + 0.8; paused = true; }
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>04 · Drag to chat — Crafts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f8f9fa; --card: #fff; --muted: #f1f3f4; --strong: #e8eaed; --ink: #1f1f1f; --mf: #5f6368; --ms: #9aa0a6;
+    --p: #f6552c; --pa: #e0431b; --psoft: #fff2ed; --psb: #fedcd2; --border: #dadce0; --bsoft: #e8eaed; --bstrong: #c7cacf;
+    --amber: #e58d1a; --violet: #8a65dc; --sky: #1f9ad3;
+    --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / .05); --shadow-md: 0 4px 6px -1px rgb(0 0 0 / .1), 0 2px 4px -2px rgb(0 0 0 / .1); --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / .1), 0 4px 6px -4px rgb(0 0 0 / .1);
+    --t: 150ms cubic-bezier(.4, 0, .2, 1);
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html, body { height: 100%; margin: 0; }
+  body { display: flex; flex-direction: column; background: var(--bg); color: var(--ink); font: 15px/1.5 "Plus Jakarta Sans", system-ui, sans-serif; }
+  button, input, textarea { font: inherit; color: inherit; }
+  button { cursor: pointer; background: none; border: 0; padding: 0; }
+  svg.i { width: 1em; height: 1em; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+  :focus-visible { outline: 2px solid var(--p); outline-offset: 2px; }
+
+  .top { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 10px 20px; border-bottom: 1px solid var(--bsoft); background: var(--card); }
+  .brand { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 14px; }
+  .logo { width: 22px; height: 22px; border-radius: 6px; background: linear-gradient(135deg, #ff7a57, #f6552c 55%, #e0431b); }
+  .meta { justify-self: end; font-size: 12px; color: var(--mf); }
+  .tabs { display: flex; gap: 4px; padding: 4px; border-radius: 12px; background: var(--muted); }
+  .tab { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px; border: 1px solid transparent; font-size: 12px; font-weight: 500; color: var(--mf); transition: all var(--t); }
+  .tab svg { font-size: 14px; }
+  .tab:hover { background: rgb(255 255 255 / .6); color: var(--ink); }
+  .tab.active { background: var(--card); color: var(--p); font-weight: 600; box-shadow: var(--shadow-xs); }
+  .count { border-radius: 999px; background: var(--strong); padding: 0 6px; font-size: 10px; line-height: 16px; }
+  .tab.dragging { border: 1px dashed rgb(246 85 44 / .6); color: var(--p); }
+  .tab.over { transform: scale(1.05); border: 1px solid var(--p); background: var(--psoft); color: var(--p); box-shadow: var(--shadow-md); }
+  .tab .drop { font-size: 10px; font-weight: 700; }
+
+  .view { flex: 1; overflow-y: auto; }
+  .banner { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: 10px; padding: 8px 24px; border-bottom: 1px solid var(--psb); background: var(--psoft); font-size: 12px; font-weight: 600; color: var(--p); }
+  .ping { position: relative; width: 8px; height: 8px; border-radius: 50%; background: var(--p); }
+  .ping::before { content: ""; position: absolute; inset: 0; border-radius: 50%; background: var(--p); animation: ping 1s cubic-bezier(0, 0, .2, 1) infinite; }
+  @keyframes ping { 75%, 100% { transform: scale(2); opacity: 0 } }
+
+  .bhead { border-bottom: 1px solid var(--bsoft); background: var(--card); padding: 24px 32px; }
+  .bhead-in { max-width: 1152px; margin: 0 auto; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px; }
+  .bhead h1 { margin: 0; font-size: 22px; line-height: 1.3; font-weight: 600; letter-spacing: -.01em; }
+  .bhead p { margin: 2px 0 0; max-width: 42rem; font-size: 12px; color: var(--mf); }
+  .search { position: relative; width: 240px; }
+  .search svg { position: absolute; left: 12px; top: 9px; font-size: 16px; color: var(--mf); }
+  .search input { width: 100%; border: 1px solid transparent; border-radius: 12px; background: var(--muted); padding: 8px 12px 8px 36px; font-size: 12px; outline: none; }
+  .search input:focus { border-color: var(--p); background: var(--card); }
+  .btn { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border-radius: 8px; background: var(--p); color: #fff; font-size: 13px; font-weight: 500; transition: background var(--t); }
+  .btn:hover { background: var(--pa); }
+  .btn2 { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--card); font-size: 12px; font-weight: 500; }
+  .btn2:hover { background: var(--muted); }
+
+  .grid { max-width: 1152px; margin: 0 auto; padding: 32px; display: grid; gap: 20px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+  .base { position: relative; display: flex; flex-direction: column; border-radius: 16px; border: 1px solid var(--bsoft); background: var(--card); padding: 20px; box-shadow: var(--shadow-xs); cursor: grab; user-select: none; transition: all var(--t); }
+  .base:active { cursor: grabbing; }
+  .base:hover { border-color: var(--p); box-shadow: var(--shadow-md); }
+  .base.is-dragged { border: 2px dashed var(--p); background: rgb(255 242 237 / .4); opacity: .6; }
+  .base .hd { display: flex; align-items: center; gap: 12px; }
+  .initial { width: 36px; height: 36px; border-radius: 12px; display: grid; place-items: center; color: #fff; font-weight: 700; font-size: 14px; box-shadow: var(--shadow-xs); flex-shrink: 0; }
+  .base .name { font-size: 14px; font-weight: 600; transition: color var(--t); }
+  .base:hover .name { color: var(--p); }
+  .base .sub { font-size: 11px; color: var(--mf); }
+  .base .desc { margin: 12px 0 16px; font-size: 12px; line-height: 1.625; color: var(--mf); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; flex: 1; }
+  .base .ft { display: flex; justify-content: space-between; align-items: center; padding-top: 16px; border-top: 1px solid var(--bsoft); }
+  .grip { display: inline-flex; align-items: center; gap: 4px; border-radius: 8px; border: 1px solid var(--border); background: var(--muted); padding: 4px 8px; font-size: 11px; font-weight: 500; color: var(--mf); transition: all var(--t); }
+  .grip svg { font-size: 14px; }
+  .base:hover .grip { border-color: rgb(246 85 44 / .5); color: var(--p); }
+  .manage { border-radius: 8px; padding: 4px 10px; font-size: 12px; font-weight: 500; color: var(--mf); }
+  .manage:hover { background: var(--muted); color: var(--ink); }
+  .edit { position: absolute; top: 16px; right: 16px; display: flex; gap: 2px; }
+  .edit button { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; font-size: 14px; color: var(--mf); }
+  .edit button:hover { background: var(--muted); color: var(--ink); }
+  @media (min-width: 768px) and (hover: hover) { .edit { opacity: 0; transition: opacity var(--t); } .base:hover .edit, .base:focus-within .edit { opacity: 1; } }
+
+  /* chat */
+  .chat { min-height: 100%; display: flex; flex-direction: column; }
+  .empty { flex: 1; display: grid; place-items: center; text-align: center; padding: 40px 20px; }
+  .empty h2 { margin: 0; font-size: 36px; line-height: 1.2; letter-spacing: -.02em; font-weight: 600; }
+  .empty p { margin: 12px auto 0; max-width: 32rem; color: var(--mf); }
+  .composer { border-top: 1px solid var(--bsoft); background: var(--card); padding: 12px 16px 16px; }
+  .composer-in { max-width: 768px; margin: 0 auto; }
+  .droprow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; border-radius: 12px; border: 1px dashed transparent; padding: 6px 8px; margin-bottom: 8px; transition: all var(--t); }
+  .droprow.dragging { border-color: rgb(246 85 44 / .5); }
+  .droprow.over { border-color: var(--p); background: var(--psoft); }
+  .droprow .lbl { font-size: 11px; font-weight: 500; color: var(--mf); }
+  .chip { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; border: 1px solid var(--border); background: var(--muted); padding: 2px 4px 2px 8px; font-size: 11px; font-weight: 500; }
+  .chip .dot { width: 8px; height: 8px; border-radius: 50%; }
+  .chip button { width: 16px; height: 16px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; color: var(--mf); }
+  .chip button:hover { background: var(--strong); color: var(--ink); }
+  .chip.solo { padding-right: 8px; }
+  .attach-wrap { position: relative; }
+  .attach { display: inline-flex; align-items: center; gap: 4px; border-radius: 999px; border: 1px dashed var(--bstrong); padding: 2px 8px; font-size: 11px; font-weight: 500; color: var(--mf); transition: all var(--t); }
+  .attach:hover { border-color: var(--p); color: var(--p); }
+  .clickaway { position: fixed; inset: 0; z-index: 9; cursor: default; }
+  .menu { position: absolute; bottom: calc(100% + 6px); left: 0; z-index: 10; width: 256px; border: 1px solid var(--border); border-radius: 8px; background: var(--card); padding: 4px; box-shadow: var(--shadow-lg); }
+  .menu button { width: 100%; display: flex; align-items: center; gap: 8px; padding: 8px; border-radius: 6px; font-size: 13px; text-align: left; }
+  .menu button:hover { background: var(--muted); }
+  .menu .dot { width: 8px; height: 8px; border-radius: 50%; }
+  .menu .none { padding: 8px; font-size: 12px; color: var(--mf); }
+  .form { display: flex; align-items: flex-end; gap: 8px; border: 1px solid var(--border); background: var(--bg); border-radius: 16px; padding: 8px; }
+  .form:focus-within { border-color: var(--p); }
+  .form textarea { flex: 1; border: 0; background: none; outline: none; resize: none; height: 40px; padding: 9px 8px; font-size: 15px; }
+  .form textarea::placeholder { color: var(--ms); }
+  .send { width: 40px; height: 40px; border-radius: 12px; background: var(--p); color: #fff; display: grid; place-items: center; font-size: 18px; }
+  .hint { margin: 8px 0 0; font-size: 12px; color: var(--mf); }
+</style>
+</head>
+<body>
+<header class="top">
+  <span class="brand"><span class="logo" aria-hidden="true"></span>Saga</span>
+  <nav class="tabs" id="tabs" aria-label="Sections"></nav>
+  <span class="meta">Craft 04 · rebuilt from Saga · sample data</span>
+</header>
+<main class="view" id="view"></main>
+
+<script>
+const ICON = {
+  chat: '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
+  db: '<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/>',
+  layers: '<path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/>',
+  search: '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>', plus: '<path d="M5 12h14"/><path d="M12 5v14"/>',
+  grip: '<circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/>',
+  pencil: '<path d="M21.17 6.81a1 1 0 0 0-3.99-3.99L3.84 16.17a2 2 0 0 0-.5.83l-1.32 4.35a.5.5 0 0 0 .62.62l4.35-1.32a2 2 0 0 0 .83-.5z"/>',
+  trash: '<path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>',
+  x: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>', up: '<path d="m5 12 7-7 7 7"/><path d="M12 19V5"/>'
+};
+const icon = (k) => `<svg class="i" viewBox="0 0 24 24" aria-hidden="true">${ICON[k]}</svg>`;
+
+/* ---- sample data (made up; the names reuse the base editor's own placeholder text) ---- */
+const BASES = [
+  { id: "b1", name: "Onboarding", colour: "amber", description: "Handbooks, policies and the first-week checklist.", source_count: 4 },
+  { id: "b2", name: "Q3 research", colour: "violet", description: "Interview notes, market reports and the competitor deck.", source_count: 7 },
+  { id: "b3", name: "Contracts", colour: "sky", description: "Signed agreements and the redlines that led to them.", source_count: 3 }
+];
+const SOURCE_TOTAL = 14;
+const byId = (id) => BASES.find((b) => b.id === id);
+
+/* ---- store: attached ids persist; never empty ---- */
+const KEY = "saga.kb.attached";
+let attachedIds = (() => { try { const v = JSON.parse(localStorage.getItem(KEY)); return Array.isArray(v) && v.length ? v : ["b1"]; } catch { return ["b1"]; } })();
+function setAttached(ids) { attachedIds = ids.length ? ids : attachedIds; try { localStorage.setItem(KEY, JSON.stringify(attachedIds)); } catch {} }
+function toggleAttached(id) {
+  const next = attachedIds.includes(id) ? attachedIds.filter((x) => x !== id) : [...attachedIds, id];
+  setAttached(next.length ? next : attachedIds); // un-attaching the last base is a no-op
+}
+const attach = (id) => { if (!attachedIds.includes(id)) setAttached([...attachedIds, id]); };
+
+let route = "bases", draggingId = null, overTab = false, overRow = false, menuOpen = false, filter = "";
+const BASE_DRAG_TYPE = "application/x-saga-base";
+
+/* ---- tabs ---- */
+const tabs = document.getElementById("tabs");
+function renderTabs() {
+  const T = [{ r: "chat", label: "Chat", ic: "chat" }, { r: "bases", label: "Bases", ic: "db", count: BASES.length }, { r: "library", label: "Library", ic: "layers", count: SOURCE_TOTAL }];
+  tabs.innerHTML = T.map((t) => {
+    const cls = ["tab", route === t.r && "active", t.r === "chat" && draggingId && "dragging", t.r === "chat" && overTab && "over"].filter(Boolean).join(" ");
+    const title = t.r === "chat" && draggingId ? `Drop to chat with ${byId(draggingId).name}` : t.label;
+    return `<button class="${cls}" data-route="${t.r}" title="${title}" ${route === t.r ? 'aria-current="page"' : ""}>${icon(t.ic)}${t.label}${t.count ? `<span class="count">${t.count}</span>` : ""}${t.r === "chat" && overTab ? '<span class="drop">Drop</span>' : ""}</button>`;
+  }).join("");
+}
+
+/* Chat tab: a drop target, and spring-loaded like a folder (400 ms). */
+let hover = null;
+tabs.addEventListener("dragover", (e) => { if (!draggingId || !e.target.closest('[data-route="chat"]')) return; e.preventDefault(); e.dataTransfer.dropEffect = "copy"; if (!overTab) { overTab = true; renderTabs(); } });
+tabs.addEventListener("dragenter", (e) => {
+  if (!draggingId || !e.target.closest('[data-route="chat"]')) return;
+  e.preventDefault(); overTab = true; renderTabs();
+  if (route !== "chat" && !hover) hover = setTimeout(() => { hover = null; go("chat"); }, 400);
+});
+tabs.addEventListener("dragleave", (e) => {
+  const tab = e.target.closest('[data-route="chat"]'); if (!tab || tab.contains(e.relatedTarget)) return;
+  overTab = false; clearTimeout(hover); hover = null; renderTabs();
+});
+tabs.addEventListener("drop", (e) => {
+  if (!e.target.closest('[data-route="chat"]')) return;
+  e.preventDefault(); overTab = false; clearTimeout(hover); hover = null;
+  const id = e.dataTransfer.getData(BASE_DRAG_TYPE) || draggingId;
+  if (id) attach(id); go("chat");
+});
+tabs.addEventListener("click", (e) => { const b = e.target.closest("[data-route]"); if (b) go(b.dataset.route); });
+
+/* ---- views: all three stay mounted, so the card being dragged is never removed mid-drag ---- */
+const view = document.getElementById("view");
+view.innerHTML = `<div id="v-bases"></div><div id="v-chat" class="chat"></div><div id="v-library"></div>`;
+const V = { bases: document.getElementById("v-bases"), chat: document.getElementById("v-chat"), library: document.getElementById("v-library") };
+V.library.innerHTML = `<div class="empty" style="min-height:70vh"><div><h2 style="font-size:22px">Document library</h2><p>Not part of this craft. Drag a base onto Chat from the Bases tab.</p></div></div>`;
+function go(r) { route = r; menuOpen = false; render(); view.scrollTop = 0; }
+
+function renderBases() {
+  const needle = filter.trim().toLowerCase();
+  const shown = BASES.filter((b) => b.name.toLowerCase().includes(needle));
+  V.bases.innerHTML = `<div class="banner" id="banner" hidden><span class="ping"></span><span>Drop it on the <strong>Chat</strong> tab above to ask questions of it.</span></div>
+    <div class="bhead"><div class="bhead-in"><div><h1>Knowledge bases</h1><p>Separate libraries of sources. A question is only answered from the bases you attach, so nothing from one project leaks into another.</p></div>
+      <div style="display:flex;align-items:center;gap:12px"><label class="search">${icon("search")}<input type="search" id="filter" placeholder="Filter bases…" aria-label="Filter knowledge bases"></label><button class="btn">${icon("plus")} New base</button></div></div></div>
+    <div class="grid" id="grid">${shown.length ? shown.map((b) => {
+      const attached = attachedIds.includes(b.id);
+      return `<article class="base" draggable="true" data-base="${b.id}">
+        <div class="edit"><button aria-label="Edit ${b.name}">${icon("pencil")}</button><button aria-label="Delete ${b.name}">${icon("trash")}</button></div>
+        <div class="hd"><span class="initial" style="background:var(--${b.colour})">${b.name[0]}</span><div><div class="name">${b.name}</div><div class="sub">${b.source_count} ${b.source_count === 1 ? "source" : "sources"}${attached ? " · attached to chat" : ""}</div></div></div>
+        <p class="desc">${b.description}</p>
+        <div class="ft"><span class="grip">${icon("grip")}Drag to Chat</span><div style="display:flex;align-items:center;gap:6px"><button class="manage">Manage</button><button class="btn2" data-chat="${b.id}">${icon("chat")} Chat</button></div></div>
+      </article>`; }).join("") : `<p style="color:var(--mf);font-size:13px">No bases match that. Try a shorter search.</p>`}</div>`;
+  const f = document.getElementById("filter");
+  f.value = filter;
+  f.oninput = (e) => { filter = e.target.value; const pos = e.target.selectionStart; renderBases(); const nf = document.getElementById("filter"); nf.focus(); nf.setSelectionRange(pos, pos); };
+}
+function dragUI() { // class toggles only, no re-render of the cards
+  document.getElementById("banner").hidden = !draggingId;
+  V.bases.querySelectorAll("[data-base]").forEach((c) => c.classList.toggle("is-dragged", c.dataset.base === draggingId));
+}
+
+function renderChat() {
+  const attached = attachedIds.map(byId);
+  const others = BASES.filter((b) => !attachedIds.includes(b.id));
+  const sources = attached.reduce((s, b) => s + b.source_count, 0);
+  const rowCls = ["droprow", draggingId && "dragging", overRow && "over"].filter(Boolean).join(" ");
+  V.chat.innerHTML = `
+    <div class="empty"><div><h2>Ask your library.</h2><p>${sources} sources are ready. Every answer comes back with the passages behind it, and you can open any of them at the exact page or timestamp.</p></div></div>
+    <div class="composer"><div class="composer-in">
+      <div class="${rowCls}" id="droprow">
+        <span class="lbl">Answering from</span>
+        ${attached.map((b) => `<span class="chip${attached.length > 1 ? "" : " solo"}"><span class="dot" style="background:var(--${b.colour})"></span>${b.name}${attached.length > 1 ? `<button aria-label="Detach ${b.name}" data-detach="${b.id}">${icon("x")}</button>` : ""}</span>`).join("")}
+        <span class="attach-wrap">
+          <button class="attach" id="attach" aria-expanded="${menuOpen}">${icon("plus")} Attach a base</button>
+          ${menuOpen ? `<button class="clickaway" data-close aria-label="Close"></button><div class="menu" role="menu">${others.length ? others.map((b) => `<button role="menuitem" data-attach="${b.id}"><span class="dot" style="background:var(--${b.colour})"></span>${b.name}</button>`).join("") : `<p class="none">Every base is already attached.</p>`}</div>` : ""}
+        </span>
+      </div>
+      <div class="form"><textarea rows="1" placeholder="Ask anything in your library…" aria-label="Ask a question"></textarea><button class="send" aria-label="Send">${icon("up")}</button></div>
+      <p class="hint">Answering from ${sources} ready sources. Enter to send, Shift+Enter for a new line.</p>
+    </div></div>`;
+}
+
+function render() {
+  renderTabs();
+  for (const [r, el] of Object.entries(V)) el.hidden = r !== route;
+  if (!draggingId) renderBases(); else dragUI();
+  renderChat();
+}
+
+/* Base cards: the drag source. */
+view.addEventListener("dragstart", (e) => {
+  const card = e.target.closest("[data-base]"); if (!card) return;
+  e.dataTransfer.setData(BASE_DRAG_TYPE, card.dataset.base); e.dataTransfer.setData("text/plain", card.dataset.base); e.dataTransfer.effectAllowed = "copy";
+  draggingId = card.dataset.base;
+  requestAnimationFrame(() => { renderTabs(); dragUI(); renderChat(); }); // after the browser snapshots the drag image
+});
+addEventListener("dragend", () => { draggingId = null; overTab = overRow = false; clearTimeout(hover); hover = null; render(); });
+
+/* Composer row: accepts the same drop. */
+view.addEventListener("dragover", (e) => { if (!draggingId || !e.target.closest("#droprow")) return; e.preventDefault(); e.dataTransfer.dropEffect = "copy"; if (!overRow) { overRow = true; renderChat(); } });
+view.addEventListener("dragleave", (e) => { const row = e.target.closest("#droprow"); if (!row || row.contains(e.relatedTarget)) return; overRow = false; renderChat(); });
+view.addEventListener("drop", (e) => {
+  if (!e.target.closest("#droprow")) return;
+  e.preventDefault(); const id = e.dataTransfer.getData(BASE_DRAG_TYPE) || draggingId;
+  overRow = false; if (id) attach(id); renderChat();
+});
+
+view.addEventListener("click", (e) => {
+  const b = e.target.closest("button"); if (!b) return;
+  if (b.dataset.chat) { attach(b.dataset.chat); go("chat"); } // the keyboard and touch path: same as the drop
+  else if (b.dataset.detach) { toggleAttached(b.dataset.detach); render(); }
+  else if (b.id === "attach") { menuOpen = !menuOpen; renderChat(); }
+  else if (b.hasAttribute("data-close")) { menuOpen = false; renderChat(); }
+  else if (b.dataset.attach) { attach(b.dataset.attach); menuOpen = false; render(); }
+});
+addEventListener("keydown", (e) => { if (e.key === "Escape" && menuOpen) { menuOpen = false; renderChat(); } });
+
+render();
+if (new URLSearchParams(location.search).has("shot")) { draggingId = "b2"; overTab = true; render(); }
+</script>
+</body>
+</html>

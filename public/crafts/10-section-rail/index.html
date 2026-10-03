@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>10 · Section rail — Crafts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400&family=Azeret+Mono:wght@700&display=swap" rel="stylesheet">
+<style>
+  :root, .dark { --surface: #121316; --ink: #f1f3f5; --signal: #ff7a57; }
+  .light { --surface: #f8f9fa; --ink: #1f1f1f; --signal: #f6552c; }
+  :root {
+    --ease-power4: cubic-bezier(.215, .61, .355, 1); --mono: "Azeret Mono", ui-monospace, monospace;
+    --glow: 0 0 9px color-mix(in oklab, var(--signal) 50%, transparent);
+    --glow-text: 0 0 10px color-mix(in oklab, var(--signal) 85%, transparent);
+    --fluid: calc((100vw - 402px) / 1518);
+    --t-2xl: clamp(40px, calc(40px + 48 * var(--fluid)), 88px);
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: auto; }
+  body { margin: 0; background: #121316; font-family: "Inter Tight", system-ui, sans-serif; letter-spacing: -.008em; }
+  section, footer, .hero { background: var(--surface); color: var(--ink); }
+
+  .hero { min-height: 100vh; display: grid; place-items: center; text-align: center; background: #060608; }
+  .hero h1 { margin: 0; font-weight: 400; font-size: var(--t-2xl); letter-spacing: -.022em; line-height: 1.05; }
+  .hero p, .meta { font: 700 11px/1.6 var(--mono); text-transform: uppercase; letter-spacing: .04em; color: color-mix(in oklab, var(--ink) 50%, transparent); }
+  .meta { position: absolute; top: 24px; left: 28px; margin: 0; }
+  .meta b { color: var(--signal); }
+
+  section { min-height: 110vh; padding: 18vh 14vw 12vh 22vw; }
+  section h2 { margin: 0 0 40px; font-weight: 400; font-size: var(--t-2xl); line-height: 1.05; letter-spacing: -.022em; }
+  .filler { display: flex; flex-direction: column; gap: 14px; max-width: 560px; }
+  .filler span { height: 12px; border-radius: 2px; background: color-mix(in oklab, var(--ink) 9%, transparent); }
+  .sample { margin-top: 28px; font: 700 10px/1 var(--mono); text-transform: uppercase; letter-spacing: .04em; color: color-mix(in oklab, var(--ink) 35%, transparent); }
+  footer { min-height: 60vh; display: grid; place-items: center; background: #060608; font: 700 11px/1 var(--mono); text-transform: uppercase; letter-spacing: .04em; }
+
+  .spy { position: fixed; z-index: 5; top: 50%; left: 40px; translate: 0 -50%; transition: opacity .4s; }
+  .spy.is-hidden { opacity: 0; pointer-events: none; }
+  .spy ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+  .spy a { position: relative; display: flex; align-items: center; font: 700 11px/1 var(--mono); text-transform: uppercase; color: color-mix(in oklab, var(--ink) 45%, transparent); text-decoration: none; transition: color .3s var(--ease-power4); outline: none; }
+  .spy a:hover, .spy a:focus-visible, .spy a.is-active { color: var(--ink); }
+  .track { position: relative; flex-shrink: 0; width: 2px; height: 26px; background: color-mix(in oklab, var(--ink) 18%, transparent); }
+  .fill { position: absolute; inset: 0; background: var(--signal); box-shadow: var(--glow); transform: scaleY(var(--scroll-progress, 0)); transform-origin: 50% 0; }
+  .label { position: absolute; top: 50%; left: 100%; margin-left: 10px; padding: 6px 8px; white-space: nowrap; background: color-mix(in oklab, var(--surface) 84%, transparent); border: 1px dashed color-mix(in oklab, var(--ink) 24%, transparent); backdrop-filter: blur(6px); opacity: 0; translate: -8px -50%; pointer-events: none; transition: opacity .25s var(--ease-power4), translate .25s var(--ease-power4); transition-delay: calc(var(--i, 0) * 30ms); }
+  .spy a.is-active .label { border: 1px solid var(--signal); }
+  .spy.show-labels .label { transition: none; }
+  .spy:hover .label, .spy:focus-within .label, .spy.show-labels .label { opacity: 1; translate: 0 -50%; pointer-events: auto; }
+  .current { position: absolute; top: calc(100% + 16px); left: -4.5px; font: 700 11px/1 var(--mono); letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; color: var(--signal); text-shadow: var(--glow-text); writing-mode: vertical-rl; rotate: 180deg; }
+  @media (max-width: 767px) { .spy { display: none; } section { padding-left: 10vw; } }
+</style>
+</head>
+<body>
+<div class="hero" style="position:relative">
+  <p class="meta"><b>10</b> / Section rail — from Saga's landing page</p>
+  <div><h1>Scroll down</h1><p>The rail appears past this screen · hover it for labels · click one to jump</p></div>
+</div>
+<main id="sections"></main>
+<footer>End · scroll back up</footer>
+
+<nav class="spy is-hidden" id="spy" aria-label="Sections">
+  <ul id="spy-list"></ul>
+  <span class="current" id="current" aria-hidden="true"></span>
+</nav>
+
+<script>
+/* Real labels; the section bodies are placeholder bars. */
+const SECTIONS = [
+  { id: "about", label: "About", surface: "light" },
+  { id: "how-it-works", label: "How it works", surface: "dark" },
+  { id: "library", label: "Library", surface: "light" },
+  { id: "privacy", label: "Privacy", surface: "light" },
+  { id: "get-started", label: "Get started", surface: "dark" }
+];
+const widths = [92, 78, 85, 64, 88, 40];
+document.getElementById("sections").innerHTML = SECTIONS.map((s) => `<section id="${s.id}" class="${s.surface}"><h2>${s.label}</h2><div class="filler">${widths.map((w) => `<span style="width:${w}%"></span>`).join("")}</div><p class="sample">Placeholder content</p></section>`).join("");
+document.getElementById("spy-list").innerHTML = SECTIONS.map((s, i) => `<li><a href="#${s.id}" style="--i:${i}"><span class="track"><span class="fill"></span></span><span class="label">${s.label}</span></a></li>`).join("");
+
+const spy = document.getElementById("spy"), current = document.getElementById("current");
+const links = [...spy.querySelectorAll("a")], els = SECTIONS.map((s) => document.getElementById(s.id));
+const hero = document.querySelector(".hero"), footer = document.querySelector("footer");
+const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* Scramble the current name from its old text to the new one ("01", 0.7s). */
+let scrambling = null, shownName = "";
+function setCurrent(name) {
+  if (reduced) { current.textContent = shownName = name; return; }
+  const from = shownName, start = performance.now();
+  cancelAnimationFrame(scrambling); // overwrite: true
+  (function step(now) {
+    const p = Math.min(1, (now - start) / 700), len = Math.round(from.length + (name.length - from.length) * p), shown = Math.floor(name.length * p);
+    let out = name.slice(0, shown);
+    for (let i = shown; i < len; i++) out += name[i] === " " ? " " : "01"[(Math.random() * 2) | 0];
+    current.textContent = out;
+    if (p < 1) scrambling = requestAnimationFrame(step); else shownName = name;
+  })(start);
+}
+
+let active = null, frozen = false;
+function update() {
+  if (frozen) return;
+  const vh = innerHeight, y = scrollY, centre = y + vh / 2;
+  // Active from "top center" to "bottom bottom"; entering one resets the rest.
+  let next = null;
+  els.forEach((el, i) => { const top = el.offsetTop; if (centre >= top && y + vh <= top + el.offsetHeight + vh / 2) next = i; });
+  if (next === null) { // between "bottom bottom" and the next "top center", the last one entered stays
+    els.forEach((el, i) => { if (centre >= el.offsetTop) next = i; });
+  }
+  if (next !== active && next !== null) {
+    active = next;
+    links.forEach((l, i) => { l.classList.toggle("is-active", i === active); if (i !== active) l.style.setProperty("--scroll-progress", 0); });
+    setCurrent(SECTIONS[active].label);
+  }
+  if (active !== null) {
+    const el = els[active], top = el.offsetTop;
+    const progress = Math.max(0, Math.min(1, (centre - top) / (el.offsetHeight - vh / 2)));
+    links[active].style.setProperty("--scroll-progress", progress);
+  }
+  // Light when any light section spans the centre line ("top center" → "bottom center"): counted, not toggled.
+  let lit = 0;
+  els.forEach((el, i) => { if (SECTIONS[i].surface === "light" && centre >= el.offsetTop && centre < el.offsetTop + el.offsetHeight) lit++; });
+  spy.classList.toggle("light", lit > 0);
+  // Hidden over the hero and the footer.
+  spy.classList.toggle("is-hidden", centre < hero.offsetHeight || centre >= footer.offsetTop);
+}
+addEventListener("scroll", update, { passive: true });
+addEventListener("resize", update);
+links.forEach((l, i) => l.addEventListener("click", (e) => { e.preventDefault(); scrollTo({ top: els[i].offsetTop, behavior: reduced ? "auto" : "smooth" }); }));
+
+if (new URLSearchParams(location.search).has("shot")) {
+  // Headless capture ignores scroll position, so lay the page out as it looks
+  // partway through Library instead: earlier blocks removed, the rest shifted up.
+  frozen = true; history.scrollRestoration = "manual";
+  const lib = els[2], shift = lib.offsetHeight * .6 - innerHeight / 2;
+  [hero, els[0], els[1]].forEach((el) => (el.style.display = "none"));
+  lib.style.marginTop = `${-shift}px`;
+  spy.className = "spy light show-labels";
+  links.forEach((l, i) => l.classList.toggle("is-active", i === 2));
+  links[2].style.setProperty("--scroll-progress", .64);
+  current.textContent = SECTIONS[2].label;
+} else update();
+</script>
+</body>
+</html>

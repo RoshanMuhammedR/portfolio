@@ -1,6 +1,6 @@
 # Portfolio — Roshan Muhammed R
 
-Live: <https://portfolio-frontend-teal-ten.vercel.app/>
+Live: <https://roshan-weld.vercel.app/>
 
 A five-page portfolio behind a fixed left rail: **Home**, **Works**, **About**,
 **Writings**, **Craft**. Each page's right side is interactive — a works column
@@ -134,10 +134,13 @@ before first paint, so it never flashes.
   Konnectify internship. Five have live screenshots. Once migration 0001 and
   the seed (0007) are applied they live in the `projects` table; until then,
   in `content/projects.ts`.
-- **Craft** — twelve self-contained pieces from the `../crafts` repository. Their
-  captures are in `public/craft/`, working copies in `public/crafts/` (every
-  tile opens a live demo), and their descriptions, tags and order in the
-  `craft_items` table.
+- **Craft** — ten UI pieces rebuilt from
+  [Saga](https://github.com/RoshanMuhammedR/KB-ULT) as self-contained pages
+  (vanilla HTML, CSS and JS, sample data only). Captures are in
+  `public/craft/`, the pages in `public/crafts/` (every tile opens a live
+  demo), and their rows in `craft_items`, synced by slug from
+  `supabase/migrations/0008_saga_crafts.sql`. Each page takes `?shot` to
+  render the frozen state its capture was taken from.
 - **Writings** — three posts in the `writings` table, editable at `/studio`.
   Covers and list previews are uploaded per post.
 - **About** — the favourites on the desk are the owner's own and are entered in

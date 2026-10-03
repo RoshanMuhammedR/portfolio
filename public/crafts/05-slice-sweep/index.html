@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>05 · Slice sweep — Crafts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400&family=Azeret+Mono:wght@700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --surface: #f8f9fa; --ink: #1f1f1f; --signal: #f6552c; --on-signal: #ffffff;
+    --fluid: calc((100vw - 402px) / 1518);
+    --t-md: clamp(15px, calc(15px + 5 * var(--fluid)), 20px);
+    --t-xl: clamp(25px, calc(25px + 20 * var(--fluid)), 45px);
+    --t-2xl: clamp(40px, calc(40px + 48 * var(--fluid)), 88px);
+    --t-eye: clamp(13px, calc(13px + 4 * var(--fluid)), 17px);
+    --padding: clamp(20px, calc(20px + 40 * var(--fluid)), 60px);
+    --mono: "Azeret Mono", ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; }
+  body { background: var(--surface); color: var(--ink); font-family: "Inter Tight", system-ui, sans-serif; letter-spacing: -.008em; }
+  .meta { padding: 24px 28px 0; font: 700 11px/1.5 var(--mono); text-transform: uppercase; letter-spacing: .04em; color: color-mix(in oklab, var(--ink) 45%, transparent); }
+  .meta b { color: var(--signal); }
+
+  .library { padding: calc(var(--padding) * .9) var(--padding) var(--padding); }
+  .head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 24px; margin-bottom: calc(var(--padding) * .8); }
+  .head h2 { margin: 0; font-weight: 400; font-size: var(--t-2xl); line-height: 1.1; letter-spacing: -.022em; }
+  .head p { margin: 0; font-size: var(--t-md); line-height: 1.4; max-width: 34em; }
+  .head p span { opacity: .68; }
+  @media (min-width: 768px) { .head p { text-align: right; } }
+
+  .list { list-style: none; margin: 0; padding: 0; }
+  .item:not(:first-child) .link { border-top: 2px dashed color-mix(in oklab, var(--ink) 10%, transparent); }
+  .link { position: relative; display: flex; align-items: center; padding-block: 24px; color: inherit; text-decoration: none; outline-offset: -2px; }
+  .pattern { position: absolute; inset: 0; z-index: 1; display: flex; align-items: stretch; pointer-events: none; }
+  .slice { flex: 1; height: 100%; background: var(--signal); transform: scaleX(0); will-change: transform; }
+
+  .col { position: relative; z-index: 2; transition: opacity .3s ease-in-out, color .3s ease-in-out; }
+  .index { font-size: var(--t-xl); min-width: 69px; line-height: 1.1; }
+  .title { font-size: var(--t-xl); line-height: 1.1; text-wrap: balance; flex: 1; }
+  .type, .loc { display: none; font: 700 var(--t-eye)/1 var(--mono); text-transform: uppercase; }
+  .action { margin-left: auto; padding-right: 28px; }
+  .btn { width: 30px; height: 30px; border-radius: 6px; background: var(--signal); display: grid; place-items: center; transition: background .3s ease-in-out; }
+  .btn svg { width: 12px; height: 12px; fill: var(--on-signal); transition: fill .3s ease-in-out; }
+  @media (min-width: 768px) { .index { margin-right: 80px; padding-left: 28px; } }
+  @media (min-width: 1024px) {
+    .title { flex: 0 0 44%; }
+    .type { display: block; flex: 0 0 14%; } .loc { display: block; flex: 0 0 18%; }
+    .col { opacity: .45; }
+    .link.is-hover .col { opacity: 1; color: var(--on-signal); }
+    .link.is-hover .btn { background: var(--surface); }
+    .link.is-hover .btn svg { fill: var(--ink); }
+  }
+  .note { padding: 0 var(--padding) 28px; font: 700 10px/1.5 var(--mono); text-transform: uppercase; letter-spacing: .04em; color: color-mix(in oklab, var(--ink) 40%, transparent); }
+</style>
+</head>
+<body>
+<div class="meta"><b>05</b> / Slice sweep — from Saga's landing page · sample data</div>
+<section class="library">
+  <div class="head">
+    <h2>The library<br>behind it.</h2>
+    <p id="text"></p>
+  </div>
+  <ul class="list" id="list"></ul>
+</section>
+<p class="note">Hover the rows: 37 slices fill from the left and drain to the right. Touch screens get no sweep, as in the original.</p>
+
+<script>
+/* ---- sample data: the repo's own fictional demo library ---- */
+const ROWS = [
+  { index: "01", title: "Northwind Logistics — Q2 2026 filing", type: "PDF", locator: "Cited by page" },
+  { index: "02", title: "Northwind Q2 earnings call", type: "Audio", locator: "Cited by timestamp" },
+  { index: "03", title: "Meridian onboarding deck", type: "Slides", locator: "Cited by slide" },
+  { index: "04", title: "Freight market outlook 2026", type: "Video", locator: "Cited by timestamp" },
+  { index: "05", title: "Discovery notes — Rotterdam", type: "Markdown", locator: "Cited by section" }
+];
+document.getElementById("text").innerHTML = "Every source is <span>cited by</span> where its passage lives:<br/><span>the page of a PDF,</span> the slide of a deck,<br/><span>the second of a recording,</span> the section of your notes.";
+
+/* A 7×7 pixel arrow; each lit cell is a 0.86 square inset by 0.07. */
+const ARROW = ["...#...", "....#..", ".....#.", "#######", ".....#.", "....#..", "...#..."];
+const arrow = `<svg viewBox="0 0 7 7" aria-hidden="true">${ARROW.flatMap((r, y) => [...r].map((c, x) => (c === "#" ? `<rect x="${x + .07}" y="${y + .07}" width=".86" height=".86"/>` : ""))).join("")}</svg>`;
+
+const SLICES = 37;
+const list = document.getElementById("list");
+const rows = ROWS.map((r) => {
+  const li = document.createElement("li"); li.className = "item";
+  li.innerHTML = `<a class="link" href="#" onclick="return false">
+    <span class="pattern" aria-hidden="true">${'<span class="slice"></span>'.repeat(SLICES)}</span>
+    <span class="col index">${r.index}</span><span class="col title">${r.title}</span>
+    <span class="col type">[${r.type}]</span><span class="col loc">${r.locator}</span>
+    <span class="col action"><span class="btn">${arrow}</span></span></a>`;
+  list.appendChild(li);
+  const link = li.firstElementChild;
+  return { link, slices: [...link.querySelectorAll(".slice")].map((el) => ({ el, v: 0 })) };
+});
+
+/* ---- tweens with GSAP's semantics: per-target overwrite, staggered start ---- */
+const power4InOut = (t) => (t < .5 ? 16 * t ** 5 : 1 - (-2 * t + 2) ** 5 / 2);
+const active = new Map();
+let running = false;
+function to(slice, value, delay) {
+  active.set(slice, { from: slice.v, to: value, start: performance.now() + delay * 1000 }); // overwrite: true
+  if (!running) { running = true; requestAnimationFrame(tick); }
+}
+function tick(now) {
+  for (const [s, t] of active) {
+    if (now < t.start) continue;
+    const p = Math.min(1, (now - t.start) / 500); // GSAP's default 0.5s
+    s.v = t.from + (t.to - t.from) * power4InOut(p);
+    s.el.style.transform = `scaleX(${s.v})`;
+    if (p >= 1) active.delete(s);
+  }
+  if (active.size) requestAnimationFrame(tick); else running = false;
+}
+
+const finePointer = () => matchMedia("(hover: hover) and (pointer: fine)").matches;
+function sweep(row, fill) {
+  row.link.classList.toggle("is-hover", fill);
+  if (!finePointer()) return;
+  row.slices.forEach((s, i) => {
+    s.el.style.transformOrigin = fill ? "0% 50%" : "100% 50%";
+    to(s, fill ? 1.05 : 0, i * 0.01); // stagger each 0.01 from the start; 1.05 closes the hairlines
+  });
+}
+for (const row of rows) {
+  row.link.addEventListener("mouseenter", () => sweep(row, true));
+  row.link.addEventListener("mouseleave", () => sweep(row, false));
+  row.link.addEventListener("focus", () => sweep(row, true));
+  row.link.addEventListener("blur", () => sweep(row, false));
+}
+
+/* Capture mode: row 02 mid-hover, its slices settled. */
+if (new URLSearchParams(location.search).has("shot")) {
+  rows[1].link.classList.add("is-hover");
+  rows[1].slices.forEach((s) => { s.el.style.transformOrigin = "0% 50%"; s.el.style.transform = "scaleX(1.05)"; });
+  rows[2].slices.forEach((s, i) => { s.el.style.transformOrigin = "100% 50%"; s.el.style.transform = `scaleX(${Math.max(0, Math.min(1.05, i / 6 - 3.4))})`; });
+}
+</script>
+</body>
+</html>

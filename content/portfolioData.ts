@@ -11,8 +11,8 @@ export const identityData: IdentityInfo = {
   linkedin: "linkedin.com/in/roshan2004",
   linkedinUrl: "https://linkedin.com/in/roshan2004",
   resumeUrl: "/resume.pdf",
-  liveSite: "portfolio-frontend-teal-ten.vercel.app",
-  liveSiteUrl: "https://portfolio-frontend-teal-ten.vercel.app",
+  liveSite: "roshan-weld.vercel.app",
+  liveSiteUrl: "https://roshan-weld.vercel.app",
   positioningLine: "builds full-stack products end to end — product surfaces in Next.js and React, APIs in NestJS and FastAPI, and the PostgreSQL, Redis and queue layers underneath that keep them fast."
 };
 

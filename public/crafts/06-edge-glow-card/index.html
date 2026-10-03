@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>06 · Edge-glow card — Crafts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400&family=Azeret+Mono:wght@700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --surface: #121316; --ink: #f1f3f5; --signal: #ff7a57;
+    --glow: 0 0 9px color-mix(in oklab, var(--signal) 50%, transparent);
+    --fluid: calc((100vw - 402px) / 1518);
+    --t-md: clamp(15px, calc(15px + 5 * var(--fluid)), 20px);
+    --t-2lg: clamp(36px, calc(36px + 4 * var(--fluid)), 40px);
+    --mono: "Azeret Mono", ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body { background: var(--surface); color: var(--ink); font-family: "Inter Tight", system-ui, sans-serif; letter-spacing: -.008em; overflow: hidden; }
+
+  /* The grid: surface-coloured cells; the glow sits under them and shows through the 1px gutters. */
+  .grid { position: fixed; inset: 0; overflow: hidden; background: color-mix(in oklab, var(--ink) 7%, var(--surface)); }
+  .grid__point { position: absolute; top: 0; left: 0; z-index: 0; width: 50%; height: 50%; border-radius: 50%; background-image: radial-gradient(var(--signal), transparent 40%); opacity: 0; will-change: transform, opacity; }
+  .grid__rows { position: absolute; inset: -1px; z-index: 1; display: flex; flex-direction: column; gap: 1px; }
+  .grid__row { display: flex; gap: 1px; flex-shrink: 0; }
+  .grid__row:nth-child(odd) { margin-left: calc(var(--cell) / -2); }
+  .grid__cell { width: var(--cell); height: var(--cell); flex-shrink: 0; background: var(--surface); }
+
+  .stage { position: relative; z-index: 2; height: 100%; display: grid; place-items: center; pointer-events: none; }
+  .card { position: relative; width: min(440px, 86vw); display: flex; flex-direction: column; gap: 20px; padding: 28px 24px; border: 1px dashed color-mix(in oklab, var(--ink) 15%, transparent); background: var(--surface); pointer-events: auto; }
+  .pin { position: absolute; z-index: 3; width: 8px; height: 8px; background: var(--signal); box-shadow: var(--glow); }
+  .pin.tl { top: -6px; left: -6px; } .pin.tr { top: -6px; right: -6px; } .pin.bl { bottom: -6px; left: -6px; } .pin.br { bottom: -6px; right: -6px; }
+
+  .edge { --rotate: 0deg; position: absolute; inset: 0; z-index: 1; overflow: hidden; opacity: 0; pointer-events: none; }
+  .edge::before { content: ""; position: absolute; top: -50%; left: -50%; z-index: -2; width: 200%; height: 200%; background-image: conic-gradient(transparent, var(--signal), transparent 30%); transform: rotate(var(--rotate)); }
+  .edge::after { content: ""; position: absolute; top: 1px; left: 1px; z-index: -1; width: calc(100% - 2px); height: calc(100% - 2px); background: var(--surface); }
+  .card > :not(.edge):not(.pin) { position: relative; z-index: 2; }
+
+  .media { aspect-ratio: 1 / .502; border: 1px solid color-mix(in oklab, var(--ink) 20%, transparent); }
+  .media svg { display: block; width: 100%; height: 100%; }
+  .tag { align-self: flex-start; font: 700 9px/1 var(--mono); color: var(--signal); padding: 10px; border: 1px solid color-mix(in oklab, var(--ink) 15%, transparent); }
+  .card h3 { margin: 0; font-weight: 400; font-size: var(--t-2lg); line-height: 1.1; letter-spacing: -.022em; }
+  .card p { margin: 0; font-size: var(--t-md); line-height: 1.45; color: color-mix(in oklab, var(--ink) 80%, transparent); }
+
+  .meta { position: fixed; z-index: 3; top: 24px; left: 28px; font: 700 11px/1.5 var(--mono); text-transform: uppercase; letter-spacing: .04em; color: color-mix(in oklab, var(--ink) 45%, transparent); pointer-events: none; }
+  .meta b { color: var(--signal); }
+</style>
+</head>
+<body>
+<div class="grid" id="grid"><div class="grid__point" id="point"></div><div class="grid__rows" id="rows"></div></div>
+<div class="meta"><b>06</b> / Edge-glow card — from Saga's landing page · move the pointer around the card</div>
+
+<div class="stage">
+  <article class="card" id="card">
+    <div class="edge" id="edge" aria-hidden="true"></div>
+    <span class="pin tl"></span><span class="pin tr"></span><span class="pin bl"></span><span class="pin br"></span>
+    <div class="media"><svg id="rings" viewBox="0 0 560 281" aria-label="Relevance rings counting up: 89, 81 and 74 percent, then three passages cited"></svg></div>
+    <span class="tag">[002]</span>
+    <h3>Ask in plain language</h3>
+    <p>Saga searches your library for the passages that actually bear on the question, and answers using only those. Follow-ups understand what came before.</p>
+  </article>
+</div>
+
+<script>
+const EASE = {
+  "power1.out": (t) => 1 - (1 - t) ** 2, "power2.out": (t) => 1 - (1 - t) ** 3, "power2.in": (t) => t ** 3,
+  power3: (t) => 1 - (1 - t) ** 4,
+  bounce: (t) => { const n = 7.5625, d = 2.75; if (t < 1 / d) return n * t * t; if (t < 2 / d) return n * (t -= 1.5 / d) * t + .75; if (t < 2.5 / d) return n * (t -= 2.25 / d) * t + .9375; return n * (t -= 2.625 / d) * t + .984375; }
+};
+const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const shot = new URLSearchParams(location.search).has("shot");
+
+/* A retargetable tween (what gsap.to with overwrite / gsap.quickTo give you). */
+function follower(initial, duration, ease, apply) {
+  const f = { value: initial, from: initial, to: initial, start: 0, dur: duration,
+    set(to, dur = duration) { f.from = f.value; f.to = to; f.start = performance.now(); f.dur = dur; },
+    progress() { return Math.min(1, (performance.now() - f.start) / (f.dur * 1000)); },
+    step() { f.value = f.from + (f.to - f.from) * EASE[ease](f.progress()); apply(f.value); } };
+  return f;
+}
+
+/* ---- grid backdrop ---- */
+const grid = document.getElementById("grid"), rowsEl = document.getElementById("rows"), point = document.getElementById("point");
+function buildGrid() {
+  const cell = 225, step = innerWidth < 768 ? 150 : 255;
+  const cols = Math.ceil(innerWidth / step) + 2, rows = Math.ceil(innerHeight / step) + 2;
+  grid.style.setProperty("--cell", `${cell}px`);
+  rowsEl.innerHTML = Array.from({ length: rows }, () => `<div class="grid__row">${'<div class="grid__cell"></div>'.repeat(cols)}</div>`).join("");
+}
+buildGrid(); addEventListener("resize", buildGrid);
+
+const px = follower(0, .3, "power3", (v) => (point.style.translate = `${v}px ${py ? py.value : 0}px`));
+const py = follower(0, .3, "power3", (v) => (point.style.translate = `${px.value}px ${v}px`));
+const pop = follower(0, .4, "bounce", (v) => (point.style.opacity = v));
+let idle;
+addEventListener("pointermove", (e) => {
+  px.set(e.clientX - point.offsetWidth / 2); py.set(e.clientY - point.offsetHeight / 2); pop.set(1);
+  clearTimeout(idle); idle = setTimeout(() => pop.set(0), 750);
+});
+
+/* ---- the edge light: turns to face the pointer, the short way round ---- */
+const card = document.getElementById("card"), edge = document.getElementById("edge");
+const wrapAngle = (a) => ((((a + 180) % 360) + 360) % 360) - 180;
+const SWEEP_PEAK = 36;
+const glow = follower(0, .3, "power2.out", (v) => (edge.style.opacity = v));
+let angle = 0, turning = null;
+card.addEventListener("pointerenter", () => glow.set(1));
+card.addEventListener("pointerleave", () => { glow.set(0); angle = 0; });
+card.addEventListener("pointermove", (e) => {
+  const b = card.getBoundingClientRect();
+  const pointer = Math.atan2(e.clientY - b.top - b.height / 2, e.clientX - b.left - b.width / 2) * 180 / Math.PI;
+  const next = angle + wrapAngle(pointer + SWEEP_PEAK - angle);
+  if (!turning || turning.progress() > .5) angle = next; // commit only once the last turn is half done
+  if (!turning) turning = follower(0, .6, "power1.out", (v) => edge.style.setProperty("--rotate", `${v}deg`));
+  turning.set(next);
+});
+
+/* ---- the rings: count up, hold, drain, repeat ---- */
+const RINGS = [{ value: 89, label: "Page 14" }, { value: 81, label: "Page 22" }, { value: 74, label: "24:07" }, { value: 100, label: "Cited", display: "03" }];
+const R = 29, C = 2 * Math.PI * R, svg = document.getElementById("rings");
+svg.innerHTML = `<defs><filter id="g" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+  <rect x="24" y="24" width="512" height="233" fill="none" stroke="#ff7a57" stroke-opacity=".45" stroke-dasharray="4 4"/>` +
+  RINGS.map((r, i) => {
+    const cx = 92 + i * 125, cy = 126;
+    return `<circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="#f1f3f5" stroke-opacity=".12" stroke-width="3"/>
+      <circle class="arc" cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="#ff7a57" stroke-width="3" stroke-dasharray="${C}" stroke-dashoffset="${C}" transform="rotate(-90 ${cx} ${cy})" filter="url(#g)"/>
+      <text class="num" x="${cx}" y="${cy + 7}" text-anchor="middle" fill="#f1f3f5" style="font:700 19px 'Azeret Mono',monospace">0</text>
+      <text x="${cx}" y="${cy + 58}" text-anchor="middle" fill="#f1f3f5" fill-opacity=".26" style="font:700 9px 'Azeret Mono',monospace;letter-spacing:.04em;text-transform:uppercase">${r.label.toUpperCase()}</text>`;
+  }).join("");
+const arcs = [...svg.querySelectorAll(".arc")], nums = [...svg.querySelectorAll(".num")];
+function setRing(i, n) {
+  arcs[i].setAttribute("stroke-dashoffset", C * (1 - n / 100));
+  const r = RINGS[i];
+  nums[i].textContent = r.display ? String(Math.round((n / 100) * Number(r.display))).padStart(2, "0") : Math.round(n);
+}
+const COUNT = 1.4, STAGGER = .18, HOLD = 2.2, DRAIN = .7, WAIT = .4;
+const UP_END = COUNT + STAGGER * (RINGS.length - 1), CYCLE = UP_END + HOLD + DRAIN + WAIT;
+function ringsAt(t) {
+  RINGS.forEach((r, i) => {
+    let n;
+    if (t < UP_END + HOLD) n = r.value * EASE["power2.out"](Math.max(0, Math.min(1, (t - i * STAGGER) / COUNT)));
+    else n = r.value * (1 - EASE["power2.in"](Math.min(1, (t - UP_END - HOLD) / DRAIN)));
+    setRing(i, n);
+  });
+}
+
+const t0 = performance.now();
+function frame(now) {
+  px.step(); py.step(); pop.step(); glow.step(); turning?.step();
+  ringsAt(reduced || shot ? UP_END : ((now - t0) / 1000) % CYCLE);
+  requestAnimationFrame(frame);
+}
+
+if (shot) {
+  turning = follower(0, .6, "power1.out", (v) => edge.style.setProperty("--rotate", `${v}deg`));
+  turning.value = turning.from = turning.to = 160; glow.value = glow.from = glow.to = 1;
+  const b = card.getBoundingClientRect();
+  const sx = b.right - point.offsetWidth / 2 + 40, sy = b.bottom - point.offsetHeight / 2 + 30;
+  px.value = px.from = px.to = sx; py.value = py.from = py.to = sy; pop.value = pop.from = pop.to = 1;
+  px.step(); py.step(); pop.step(); glow.step(); turning.step(); ringsAt(UP_END);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

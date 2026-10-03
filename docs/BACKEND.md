@@ -49,14 +49,14 @@ The live project already has `craft_items` and `writings` (the
 `portfolio_content_schema` migration).
 
 **Quickest:** open **SQL Editor** → **New query**, paste the whole of
-`supabase/pending.sql`, and press **Run**. It is the seven files below in one
+`supabase/pending.sql`, and press **Run**. It is the eight files below in one
 script. If the dashboard warns about destructive operations, that is the
 `drop policy if exists` lines, which only replace a policy of the same name —
 confirm. The script ends by printing one row:
 
 | projects | craft_described | media_bucket | media_policies |
 |---|---|---|---|
-| 10 | 12 | true | 4 |
+| 10 | 10 | true | 4 |
 
 If `media_bucket` is false or `media_policies` is below 4, the project would
 not let the SQL editor manage storage; everything else still applied. Set the
@@ -74,6 +74,7 @@ its own query:
 | `0005_site_settings.sql` | the `site_settings` table (the studio's Settings tab) |
 | `0006_media_bucket.sql` | the public `media` bucket and its owner-only write policies |
 | `0007_seed_projects_and_craft.sql` | the nine projects and Konnectify, and the craft descriptions |
+| `0008_saga_crafts.sql` | a `slug` on `craft_items`; swaps the original twelve crafts for the ten Saga pieces |
 
 Every file is safe to run twice. Afterwards:
 
